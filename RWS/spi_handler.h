@@ -10,7 +10,7 @@
 #define SPI_HANDLER_H_
 
 void spi_init(void);
-void spi_send_char(uint8_t u8data);
+uint8_t spi_send_char(uint8_t u8data);
 uint8_t spi_get_char( void );
 
 
