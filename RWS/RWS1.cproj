@@ -124,10 +124,13 @@
     <CleanTarget>clean</CleanTarget>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="bme280.c">
+    <Compile Include="bme280\bme280.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="bme280.h">
+    <Compile Include="bme280\bme280.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="bme280\bme280_defs.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="configuration.h">
@@ -148,6 +151,9 @@
     <Compile Include="uart_handler.h">
       <SubType>compile</SubType>
     </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="bme280" />
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
 </Project>

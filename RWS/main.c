@@ -3,14 +3,19 @@
  *
  * Created: 8/3/2018 10:46:04 PM
  *  Author: alexandru.gaal
- */ 
-
+  */ 
+/*
+ * References for Remote Weather Station software:
+ * For Bosch BME 280 Temperature, pressure, humidity sensor see: https://github.com/BoschSensortec/BME280_driver
+*/
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include "configuration.h"
 #include "spi_handler.h"
 #include "uart_handler.h"
+
+#include "bme280/bme280.h"
 
 #include <util/delay.h>
 
@@ -22,6 +27,21 @@
 #define INIT_PORT(x,y)	(x) |=  (1<<(y))
 #define SET_PORT(x,y)	(x) |=(1<<(y))
 #define CLEAR_PORT(x,y)	(x) &= ~(1<<(y))
+
+struct bme280_dev sensor_data;
+int8_t rslt = BME280_OK;
+
+/* Sensor_0 interface over SPI with native chip select line */
+sensor_data.dev_id = 0;
+sensor_data.intf = BME280_SPI_INTF;
+sensor_data.read = user_spi_read;
+sensor_data.write = user_spi_write;
+sensor_data.delay_ms = user_delay_ms;
+
+rslt = bme280_init(&dev);
+
+
+
 
 int main(void)
 {

@@ -32,12 +32,13 @@ LIB_DEP:=
 LINKER_SCRIPT_DEP:=
 
 # Every subdirectory with source files must be described here
-SUBDIRS := 
+SUBDIRS :=  \
+../bme280
 
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS +=  \
-../bme280.c \
+../bme280/bme280.c \
 ../main.c \
 ../spi_handler.c \
 ../uart_handler.c
@@ -50,25 +51,25 @@ ASM_SRCS +=
 
 
 OBJS +=  \
-bme280.o \
+bme280/bme280.o \
 main.o \
 spi_handler.o \
 uart_handler.o
 
 OBJS_AS_ARGS +=  \
-bme280.o \
+bme280/bme280.o \
 main.o \
 spi_handler.o \
 uart_handler.o
 
 C_DEPS +=  \
-bme280.d \
+bme280/bme280.d \
 main.d \
 spi_handler.d \
 uart_handler.d
 
 C_DEPS_AS_ARGS +=  \
-bme280.d \
+bme280/bme280.d \
 main.d \
 spi_handler.d \
 uart_handler.d
@@ -95,6 +96,13 @@ LINKER_SCRIPT_DEP+=
 
 
 
+
+bme280/%.o: ../bme280/%.c
+	@echo Building file: $<
+	@echo Invoking: AVR/GNU C Compiler : 4.8.1
+	$(QUOTE)C:\Program Files (x86)\Atmel\Atmel Toolchain\AVR8 GCC\Native\3.4.1061\avr8-gnu-toolchain\bin\avr-gcc.exe$(QUOTE)  -x c -funsigned-char -funsigned-bitfields -DDEBUG  -O1 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -g2 -Wall -mmcu=atmega8 -c -std=gnu99 -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
+	@echo Finished building: $<
+	
 
 ./%.o: .././%.c
 	@echo Building file: $<
