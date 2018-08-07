@@ -1,2 +1,6 @@
 \RWS\Debug\*.*
 RWS\Debug\*.*
+*.o
+RWS/Debug/RWS1.lss
+*.o
+*.lss

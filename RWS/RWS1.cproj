@@ -145,6 +145,12 @@
     <Compile Include="spi_handler.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="timer_handler.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="timer_handler.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="uart_handler.c">
       <SubType>compile</SubType>
     </Compile>

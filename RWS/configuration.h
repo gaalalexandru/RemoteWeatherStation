@@ -12,6 +12,21 @@
 #include <avr/io.h>
 #include <avr/portpins.h>
 
+#define OUTPUT_LOG
+
+//////////////////////////////////////////////////////////////////////////
+//					CONTROLLER SELECTION AND CONFIGURATION				//
+//////////////////////////////////////////////////////////////////////////
+#if defined (__AVR_ATmega48PB__)  && !defined (__AVR_ATmega8__)
+#define ATMEGA48 (1)
+#define ATMEGA8	(0)
+#elif defined (__AVR_ATmega8__)  && !defined (__AVR_ATmega48PB__)
+#define ATMEGA48 (0)
+#define ATMEGA8	(1)
+#else
+#error "Please specify one target controller"
+#endif  //controller selection
+
 #define FOSC 4000000// Clock Speed
 #define F_CPU FOSC
 //////////////////////////////////////////////////////////////////////////
@@ -34,6 +49,7 @@
 #define MYUBRR ((FOSC/(16*BAUD))-1)
 #endif
 
+#define USE_UART_DEC_OUTPUT
 //////////////////////////////////////////////////////////////////////////
 //							 SPI CONFIGURATIONS							//
 //////////////////////////////////////////////////////////////////////////
@@ -49,11 +65,11 @@
 #define CS_BME280_PORT	PORTB
 #define CS_BME280_PIN	(0)
 
-#define CS_LIS3MDL_DDRB	DDRB
+#define CS_LIS3MDL_DDR	DDRB
 #define CS_LIS3MDL_PORT	PORTB
 #define CS_LIS3MDL_PIN	(1)
 
-#define CS_FLASH_DDRB	DDRB
+#define CS_FLASH_DDR	DDRB
 #define CS_FLASH_PORT	PORTD
 #define CS_FLASH_PIN	(5)
 

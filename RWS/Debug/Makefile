@@ -41,6 +41,7 @@ C_SRCS +=  \
 ../bme280/bme280.c \
 ../main.c \
 ../spi_handler.c \
+../timer_handler.c \
 ../uart_handler.c
 
 
@@ -54,24 +55,28 @@ OBJS +=  \
 bme280/bme280.o \
 main.o \
 spi_handler.o \
+timer_handler.o \
 uart_handler.o
 
 OBJS_AS_ARGS +=  \
 bme280/bme280.o \
 main.o \
 spi_handler.o \
+timer_handler.o \
 uart_handler.o
 
 C_DEPS +=  \
 bme280/bme280.d \
 main.d \
 spi_handler.d \
+timer_handler.d \
 uart_handler.d
 
 C_DEPS_AS_ARGS +=  \
 bme280/bme280.d \
 main.d \
 spi_handler.d \
+timer_handler.d \
 uart_handler.d
 
 OUTPUT_FILE_PATH +=RWS1.elf
@@ -88,6 +93,8 @@ LINKER_SCRIPT_DEP+=
 
 
 # AVR32/GNU C Compiler
+
+
 
 
 

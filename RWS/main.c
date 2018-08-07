@@ -12,12 +12,10 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include "configuration.h"
+#include "timer_handler.h"
 #include "spi_handler.h"
 #include "uart_handler.h"
-
 #include "bme280/bme280.h"
-
-#include <util/delay.h>
 
 #define INIT_STATUS_LED		(STATUS_LED_DDR |= (1 << STATUS_LED_PIN))
 #define TOGGLE_STATUS_LED	(STATUS_LED_PORT ^= (1 << STATUS_LED_PIN))
@@ -28,79 +26,92 @@
 #define SET_PORT(x,y)	(x) |=(1<<(y))
 #define CLEAR_PORT(x,y)	(x) &= ~(1<<(y))
 
-struct bme280_dev sensor_data;
+struct bme280_dev sensor_interf;
 int8_t rslt = BME280_OK;
 
-/* Sensor_0 interface over SPI with native chip select line */
-sensor_data.dev_id = 0;
-sensor_data.intf = BME280_SPI_INTF;
-sensor_data.read = user_spi_read;
-sensor_data.write = user_spi_write;
-sensor_data.delay_ms = user_delay_ms;
 
-rslt = bme280_init(&dev);
+void print_sensor_data(struct bme280_data *comp_data)
+{
+	#ifdef BME280_FLOAT_ENABLE
+	//printf("%0.2f, %0.2f, %0.2f\r\n",comp_data->temperature, comp_data->pressure, comp_data->humidity);
+	#else
+	#ifdef OUTPUT_LOG
+	uart_send_string("Temperature: ");	uart_send_udec(comp_data->temperature);	uart_newline();
+	uart_send_string("Pressure: ");	uart_send_udec(comp_data->pressure);uart_newline();
+	uart_send_string("Humidity: ");	uart_send_udec(comp_data->humidity);uart_newline();
+	#endif // OUTPUT_LOG
+	#endif
+}
 
+int8_t setup_measurement_normal_mode(struct bme280_dev *dev)
+//int8_t stream_sensor_data_normal_mode(struct bme280_dev *dev)
+{
+	int8_t rslt;
+	uint8_t settings_sel;
+	
 
+	/* Recommended mode of operation: Indoor navigation */
+	dev->settings.osr_h = BME280_OVERSAMPLING_1X;
+	dev->settings.osr_p = BME280_OVERSAMPLING_16X;
+	dev->settings.osr_t = BME280_OVERSAMPLING_2X;
+	dev->settings.filter = BME280_FILTER_COEFF_16;
+	dev->settings.standby_time = BME280_STANDBY_TIME_62_5_MS;
 
+	settings_sel = BME280_OSR_PRESS_SEL;
+	settings_sel |= BME280_OSR_TEMP_SEL;
+	settings_sel |= BME280_OSR_HUM_SEL;
+	settings_sel |= BME280_STANDBY_SEL;
+	settings_sel |= BME280_FILTER_SEL;
+	rslt = bme280_set_sensor_settings(settings_sel, dev);
+	#ifdef OUTPUT_LOG
+	uart_send_string("BME280 sensor setup with state: ");uart_send_char(0x35+rslt);	uart_newline();
+	#endif  //OUTPUT_LOG
+	
+	rslt = bme280_set_sensor_mode(BME280_NORMAL_MODE, dev);
+	#ifdef OUTPUT_LOG
+	uart_send_string("BME280 sensor setup with state: ");uart_send_char(0x35+rslt);uart_newline();
+	#endif  //OUTPUT_LOG
+	return rslt;
+}
 
 int main(void)
 {
-	static uint8_t spi_response = 0;
+	struct bme280_data comp_data;
 	INIT_STATUS_LED;
 	
-	INIT_PORT(CS_BME280_DDR,CS_BME280_PIN);
-	CLEAR_PORT(CS_BME280_PORT,CS_BME280_PIN);
-	_delay_ms(100);
-	SET_PORT(CS_BME280_PORT,CS_BME280_PIN);
-	
 	cli();  //Disable interrupts
+	timer2_init(); //global timer init
 	uart_init(MYUBRR);
 	spi_init();
 	sei();  // enable global interrupts
 	
+	#ifdef OUTPUT_LOG
+	uart_send_string("Timer, UART & SPI Drivers initialized");	uart_newline();
+	#endif  //OUTPUT_LOG
 	
-	uart_send_string("Drivers initialized");
+	/* Sensor_0 interface over SPI with native chip select line */
+	sensor_interf.dev_id = 0;
+	sensor_interf.intf = BME280_SPI_INTF;
+	sensor_interf.read = spi_transfer_bme280;
+	sensor_interf.write = spi_transfer_bme280;
+	sensor_interf.delay_ms = timer_delay_ms;
+
+	rslt = bme280_init(&sensor_interf);
+	
+	#ifdef OUTPUT_LOG
+	uart_send_string("BME280 sensor initialized with state: ");
+	uart_send_char(0x35+rslt);
 	uart_newline();
+	#endif  //OUTPUT_LOG
+	
+	setup_measurement_normal_mode(&sensor_interf);
+	
     while(1)
     {
-		uart_send_char(0x30);
 		uart_newline();
 		TOGGLE_STATUS_LED;
-		/*
-		uart_send_char(0x30);
-		uart_send_char('1');
-		uart_send_char(0x32);
-		uart_send_char('3');
-		uart_newline();
-		
-		spi_send_char(0x00);
-		spi_send_char(0x11);
-		spi_send_char(0x33);
-		spi_send_char(0x55);
-		spi_send_char(0xff);
-		*/
-
-		CLEAR_PORT(CS_BME280_PORT,CS_BME280_PIN);
-/*
-		uart_send_char(spi_send_char(0xFD));
-		uart_send_char(spi_send_char(0xFE));
-		uart_send_char(spi_send_char(0x00));*/
-		uart_send_char(spi_send_char(0xD0));
-		SET_PORT(CS_BME280_PORT,CS_BME280_PIN);
-		
-		uart_newline();
-		
-/*
-		CLEAR_PORT(CS_BME280_PORT,CS_BME280_PIN);
-		spi_send_char(0xFD);
-		uart_send_char(spi_get_char());	
-		uart_send_char(spi_get_char());	
-		SET_PORT(CS_BME280_PORT,CS_BME280_PIN);
-*/
-
-		
-		//uart_send_char(spi_response);
-		uart_newline();
-		_delay_ms(500);
+		timer_delay_ms(1000);
+		rslt = bme280_get_sensor_data(BME280_ALL, &comp_data, &sensor_interf);
+		print_sensor_data(&comp_data);
     }
 }

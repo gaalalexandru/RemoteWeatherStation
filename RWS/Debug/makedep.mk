@@ -8,5 +8,7 @@ main.c
 
 spi_handler.c
 
+timer_handler.c
+
 uart_handler.c
 

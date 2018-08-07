@@ -108,6 +108,7 @@ void uart_send_string(char *pt){
 	}
 }
 
+#ifdef USE_UART_DEC_OUTPUT
 /* UART Send Unsigned Decimal function */
 void uart_send_udec(uint32_t n)
 {
@@ -119,7 +120,9 @@ void uart_send_udec(uint32_t n)
 	}
 	uart_send_char(n+'0'); //n is between 0 and 9
 }
+#endif  //USE_UART_DEC_OUTPUT
 
+#ifdef USE_UART_HEX_OUTPUT
 /* UART Send Unsigned Hex function */
 void uart_send_uhex(uint32_t number)
 {
@@ -138,6 +141,7 @@ void uart_send_uhex(uint32_t number)
 		}
 	}
 }
+#endif
 
 /************************************************************************/
 /*                      Input Function definitions                      */
