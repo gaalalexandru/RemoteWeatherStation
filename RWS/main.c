@@ -43,6 +43,33 @@ void print_sensor_data(struct bme280_data *comp_data)
 	#endif
 }
 
+
+#if WEATHER_MONITORING
+int8_t setup_measurement_weather_monitoring(struct bme280_dev *dev)
+//int8_t stream_sensor_data_normal_mode(struct bme280_dev *dev)
+{
+	//int8_t rslt;
+	//uint8_t settings_sel;
+	
+
+	/* Recommended mode of operation: Indoor navigation */
+	dev->settings.osr_h = BME280_OVERSAMPLING_1X;
+	dev->settings.osr_p = BME280_OVERSAMPLING_1X;
+	dev->settings.osr_t = BME280_OVERSAMPLING_1X;
+	dev->settings.filter = BME280_FILTER_COEFF_OFF;
+	
+	/*settings_sel = BME280_OSR_PRESS_SEL;
+	settings_sel |= BME280_OSR_TEMP_SEL;
+	settings_sel |= BME280_OSR_HUM_SEL;
+	settings_sel |= BME280_FILTER_SEL;*/
+	//rslt = bme280_set_sensor_settings(settings_sel, dev);
+	#ifdef OUTPUT_LOG
+	uart_send_string("BME280 sensor setup with state: ");uart_send_char(0x35+rslt);	uart_newline();
+	#endif  //OUTPUT_LOG
+	//return rslt;
+	return bme280_set_sensor_settings(BME280_OSR_PRESS_SEL|BME280_OSR_TEMP_SEL|BME280_OSR_HUM_SEL|BME280_FILTER_SEL, dev);
+}
+#else	
 int8_t setup_measurement_normal_mode(struct bme280_dev *dev)
 //int8_t stream_sensor_data_normal_mode(struct bme280_dev *dev)
 {
@@ -73,6 +100,7 @@ int8_t setup_measurement_normal_mode(struct bme280_dev *dev)
 	#endif  //OUTPUT_LOG
 	return rslt;
 }
+#endif //WEATHER_MONITORING
 
 int main(void)
 {
@@ -104,14 +132,32 @@ int main(void)
 	uart_newline();
 	#endif  //OUTPUT_LOG
 	
+	#if WEATHER_MONITORING
+	setup_measurement_weather_monitoring(&sensor_interf);
+	#else
 	setup_measurement_normal_mode(&sensor_interf);
+	#endif  //WEATHER_MONITORING
 	
     while(1)
     {
 		uart_newline();
 		TOGGLE_STATUS_LED;
+
+		#if WEATHER_MONITORING
+		timer_delay_ms(6000);
+		rslt = bme280_set_sensor_mode(BME280_FORCED_MODE, &sensor_interf);  //trigger forced measurement
+		sensor_interf.delay_ms(40);  //delay needed for measurement to complete
+		#ifdef OUTPUT_LOG
+		uart_send_string("BME280 sensor force mode trigger with state: ");uart_send_char(0x35+rslt);uart_newline();
+		#endif  //OUTPUT_LOG
+		#else
 		timer_delay_ms(1000);
+		#endif  //WEATHER_MONITORING
+		
 		rslt = bme280_get_sensor_data(BME280_ALL, &comp_data, &sensor_interf);
 		print_sensor_data(&comp_data);
+		#ifdef OUTPUT_LOG
+		uart_send_string("BME280 sensor read with state: ");uart_send_char(0x35+rslt);uart_newline();
+		#endif  //OUTPUT_LOG
     }
 }

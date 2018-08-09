@@ -12,7 +12,7 @@
 #include <avr/io.h>
 #include <avr/portpins.h>
 
-#define OUTPUT_LOG
+//#define OUTPUT_LOG
 
 //////////////////////////////////////////////////////////////////////////
 //					CONTROLLER SELECTION AND CONFIGURATION				//
@@ -72,5 +72,10 @@
 #define CS_FLASH_DDR	DDRB
 #define CS_FLASH_PORT	PORTD
 #define CS_FLASH_PIN	(5)
+
+//////////////////////////////////////////////////////////////////////////
+//						 MEASUREMENTS CONFIGURATION						//
+//////////////////////////////////////////////////////////////////////////
+#define WEATHER_MONITORING (0)
 
 #endif /* CONFIGURATION_H_ */
