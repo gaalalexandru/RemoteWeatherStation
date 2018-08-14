@@ -69,7 +69,7 @@
 #define CS_LIS3MDL_PORT	PORTB
 #define CS_LIS3MDL_PIN	(1)
 
-#define CS_FLASH_DDR	DDRB
+#define CS_FLASH_DDR	DDRD
 #define CS_FLASH_PORT	PORTD
 #define CS_FLASH_PIN	(5)
 

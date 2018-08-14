@@ -279,7 +279,7 @@ END GROUP
 .rela.plt
  *(.rela.plt)
 
-.text           0x00000000     0x14f8
+.text           0x00000000     0x14fe
  *(.vectors)
  .vectors       0x00000000       0x26 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/../../../../avr/lib/avr4/crtm8.o
                 0x00000000                __vector_default
@@ -396,56 +396,56 @@ END GROUP
  .text.main     0x000011d0       0x8e main.o
                 0x000011d0                main
  .text.spi_init
-                0x0000125e       0x1a spi_handler.o
+                0x0000125e       0x20 spi_handler.o
                 0x0000125e                spi_init
  .text.spi_transfer_bme280
-                0x00001278       0x3a spi_handler.o
-                0x00001278                spi_transfer_bme280
+                0x0000127e       0x3a spi_handler.o
+                0x0000127e                spi_transfer_bme280
  .text.timer2_init
-                0x000012b2       0x12 timer_handler.o
-                0x000012b2                timer2_init
+                0x000012b8       0x12 timer_handler.o
+                0x000012b8                timer2_init
  .text.timer_delay_ms
-                0x000012c4       0x40 timer_handler.o
-                0x000012c4                timer_delay_ms
+                0x000012ca       0x40 timer_handler.o
+                0x000012ca                timer_delay_ms
  .text.__vector_3
-                0x00001304       0x4a timer_handler.o
-                0x00001304                __vector_3
+                0x0000130a       0x4a timer_handler.o
+                0x0000130a                __vector_3
  .text.uart_init
-                0x0000134e       0x3c uart_handler.o
-                0x0000134e                uart_init
+                0x00001354       0x3c uart_handler.o
+                0x00001354                uart_init
  .text.uart_tx_buflen
-                0x0000138a        0xc uart_handler.o
-                0x0000138a                uart_tx_buflen
+                0x00001390        0xc uart_handler.o
+                0x00001390                uart_tx_buflen
  .text.uart_send_char
-                0x00001396       0x3c uart_handler.o
-                0x00001396                uart_send_char
+                0x0000139c       0x3c uart_handler.o
+                0x0000139c                uart_send_char
  .text.__vector_12
-                0x000013d2       0x4e uart_handler.o
-                0x000013d2                __vector_12
+                0x000013d8       0x4e uart_handler.o
+                0x000013d8                __vector_12
  .text.__vector_11
-                0x00001420       0x3a uart_handler.o
-                0x00001420                __vector_11
+                0x00001426       0x3a uart_handler.o
+                0x00001426                __vector_11
  .text.libgcc.mul
-                0x0000145a       0x1e c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_mulsi3.o)
-                0x0000145a                __mulsi3
+                0x00001460       0x1e c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_mulsi3.o)
+                0x00001460                __mulsi3
  .text.libgcc.div
-                0x00001478       0x44 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_udivmodsi4.o)
-                0x00001478                __udivmodsi4
+                0x0000147e       0x44 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_udivmodsi4.o)
+                0x0000147e                __udivmodsi4
  .text.libgcc.mul
-                0x000014bc       0x14 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_muluhisi3.o)
-                0x000014bc                __muluhisi3
+                0x000014c2       0x14 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_muluhisi3.o)
+                0x000014c2                __muluhisi3
  .text.libgcc.mul
-                0x000014d0        0xc c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_mulshisi3.o)
-                0x000014d0                __mulshisi3
-                0x000014d4                __mulohisi3
+                0x000014d6        0xc c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_mulshisi3.o)
+                0x000014d6                __mulshisi3
+                0x000014da                __mulohisi3
  .text.libgcc.mul
-                0x000014dc       0x18 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_umulhisi3.o)
-                0x000014dc                __umulhisi3
-                0x000014f4                . = ALIGN (0x2)
+                0x000014e2       0x18 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_umulhisi3.o)
+                0x000014e2                __umulhisi3
+                0x000014fa                . = ALIGN (0x2)
  *(.fini9)
- .fini9         0x000014f4        0x0 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_exit.o)
-                0x000014f4                _exit
-                0x000014f4                exit
+ .fini9         0x000014fa        0x0 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_exit.o)
+                0x000014fa                _exit
+                0x000014fa                exit
  *(.fini9)
  *(.fini8)
  *(.fini8)
@@ -464,11 +464,11 @@ END GROUP
  *(.fini1)
  *(.fini1)
  *(.fini0)
- .fini0         0x000014f4        0x4 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_exit.o)
+ .fini0         0x000014fa        0x4 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_exit.o)
  *(.fini0)
-                0x000014f8                _etext = .
+                0x000014fe                _etext = .
 
-.data           0x00800060        0x0 load address 0x000014f8
+.data           0x00800060        0x0 load address 0x000014fe
                 0x00800060                PROVIDE (__data_start, .)
  *(.data)
  *(.data*)
@@ -499,8 +499,8 @@ END GROUP
  COMMON         0x0080012a       0x33 main.o
                 0x0080012a                sensor_interf
                 0x0080015d                PROVIDE (__bss_end, .)
-                0x000014f8                __data_load_start = LOADADDR (.data)
-                0x000014f8                __data_load_end = (__data_load_start + SIZEOF (.data))
+                0x000014fe                __data_load_start = LOADADDR (.data)
+                0x000014fe                __data_load_end = (__data_load_start + SIZEOF (.data))
 
 .noinit         0x0080015d        0x0
                 0x0080015d                PROVIDE (__noinit_start, .)
@@ -602,13 +602,13 @@ END GROUP
  .debug_abbrev  0x000004e6       0xeb timer_handler.o
  .debug_abbrev  0x000005d1      0x17e uart_handler.o
 
-.debug_line     0x00000000      0x865
+.debug_line     0x00000000      0x868
  *(.debug_line .debug_line.* .debug_line_end)
  .debug_line    0x00000000      0x36f bme280/bme280.o
  .debug_line    0x0000036f      0x157 main.o
- .debug_line    0x000004c6       0xf5 spi_handler.o
- .debug_line    0x000005bb      0x103 timer_handler.o
- .debug_line    0x000006be      0x1a7 uart_handler.o
+ .debug_line    0x000004c6       0xf8 spi_handler.o
+ .debug_line    0x000005be      0x103 timer_handler.o
+ .debug_line    0x000006c1      0x1a7 uart_handler.o
 
 .debug_frame    0x00000000      0x5a8
  *(.debug_frame)

@@ -52,9 +52,15 @@ void spi_init(void)
 	1		1		0		fosc/32
 	1		1		1		fosc/64
 	*/
+	
+	//Init CS line for all SPI devices, as output
 	INIT_CS_PIN(CS_BME280_DDR,CS_BME280_PIN);
 	INIT_CS_PIN(CS_LIS3MDL_DDR,CS_LIS3MDL_PIN);
 	INIT_CS_PIN(CS_FLASH_DDR,CS_FLASH_PIN);
+	//Disable CS line for all SPI devices, by setting them high
+	SET_CS_PIN(CS_BME280_PORT,CS_BME280_PIN);
+	SET_CS_PIN(CS_LIS3MDL_PORT,CS_LIS3MDL_PIN);
+	SET_CS_PIN(CS_FLASH_PORT,CS_FLASH_PIN);
 }
 
 /************************************************************************/
