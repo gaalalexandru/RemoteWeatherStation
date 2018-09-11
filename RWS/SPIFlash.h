@@ -64,11 +64,11 @@
 
 #if defined(SPIFLASH_CS_TRIS)
 	void SPIFlashInit(void);		
-	void SPIFlashReadArray(uint32_t dwAddress, uint8_t *vData, uint16_t wLen);
-	void SPIFlashBeginWrite(uint32_t dwAddr);
-	void SPIFlashWrite(uint8_t vData);
-	void SPIFlashWriteArray(uint8_t *vData, uint16_t wLen);
-	void SPIFlashEraseSector(uint32_t dwAddr);
+	void SPIFlashReadArray(DWORD dwAddress, BYTE *vData, WORD wLen);
+	void SPIFlashBeginWrite(DWORD dwAddr);
+	void SPIFlashWrite(BYTE vData);
+	void SPIFlashWriteArray(BYTE *vData, WORD wLen);
+	void SPIFlashEraseSector(DWORD dwAddr);
 #else
 	// If you get any of these linker errors, it means that you either have an 
 	// error in your HardwareProfile.h or TCPIPConfig.h definitions.  The code 

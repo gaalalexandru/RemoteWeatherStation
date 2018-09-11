@@ -54,7 +54,11 @@
 ********************************************************************/
 #define __SPIFLASH_C
 
+#include "HardwareProfile.h"
+
 #if defined(SPIFLASH_CS_TRIS)
+
+#include "TCPIP Stack/TCPIP.h"
 
 #define READ				0x03    // SPI Flash opcode: Read up up to 25MHz
 #define READ_FAST			0x0B    // SPI Flash opcode: Read up to 50MHz with 1 dummy byte
@@ -84,9 +88,48 @@
 #define AAI     0x40    // Mask for Status Register AAI (Auto Address Increment Programming status) bit
 #define BPL     0x80    // Mask for Status Register BPL (BPx block protect bit read-only protect) bit
 
+#if defined(__PIC24F__) || defined(__PIC24FK__)
+    #define PROPER_SPICON1  (0x001B | 0x0120)   // 1:1 primary prescale, 2:1 secondary prescale, CKE=1, MASTER mode
+#elif defined(__dsPIC33F__) || defined(__PIC24H__) || defined(__dsPIC33E__) || defined (__PIC24E__)
+    #define PROPER_SPICON1  (0x000F | 0x0120)   // 1:1 primary prescale, 5:1 secondary prescale, CKE=1, MASTER mode
+#elif defined(__dsPIC30F__)
+    #define PROPER_SPICON1  (0x0017 | 0x0120)   // 1:1 primary prescale, 3:1 secondary prescale, CKE=1, MASTER mode
+#elif defined(__PIC32MX__)
+    #define PROPER_SPICON1  (_SPI2CON_ON_MASK  | _SPI2CON_CKE_MASK | _SPI2CON_MSTEN_MASK)
+#else
+    #define PROPER_SPICON1  (0x20)              // SSPEN bit is set, SPI in master mode, FOSC/4, IDLE state is low level
+#endif
+
+// Maximum speed of SPI Flash part in Hz
+// Should theoretically operate at 25MHz, but need to account for level-shifting delays
+#define SPIFLASH_MAX_SPI_FREQ       (16000000ul)
+
+#if defined (__18CXX)
+    #define ClearSPIDoneFlag()  {SPIFLASH_SPI_IF = 0;}
+    #define WaitForDataByte()   {while(!SPIFLASH_SPI_IF); SPIFLASH_SPI_IF = 0;}
+    #define SPI_ON_BIT          (SPIFLASH_SPICON1bits.SSPEN)
+#elif defined(__C30__)
+    #define ClearSPIDoneFlag()
+    static inline __attribute__((__always_inline__)) void WaitForDataByte( void )
+    {
+        while ((SPIFLASH_SPISTATbits.SPITBF == 1) || (SPIFLASH_SPISTATbits.SPIRBF == 0));
+    }
+
+    #define SPI_ON_BIT          (SPIFLASH_SPISTATbits.SPIEN)
+#elif defined( __PIC32MX__ )
+    #define ClearSPIDoneFlag()
+    static inline __attribute__((__always_inline__)) void WaitForDataByte( void )
+    {
+        while (!SPIFLASH_SPISTATbits.SPITBE || !SPIFLASH_SPISTATbits.SPIRBF);
+    }
+
+    #define SPI_ON_BIT          (SPIFLASH_SPICON1bits.ON)
+#else
+    #error Determine SPI flag mechanism
+#endif
 
 // Internal pointer to address being written
-static uint32_t dwWriteAddr;
+static DWORD dwWriteAddr;
 
 // SPI Flash device capabilities
 static union
@@ -102,7 +145,7 @@ static union
 } deviceCaps;
 
 
-static void _SendCmd(uint8_t cmd);
+static void _SendCmd(BYTE cmd);
 static void _WaitWhileBusy(void);
 //static void _GetStatus(void);
 
@@ -132,15 +175,15 @@ static void _WaitWhileBusy(void);
   ***************************************************************************/
 void SPIFlashInit(void)
 {
-	uint8_t i;
-    volatile uint8_t Dummy;
-    uint8_t vSPIONSave;
+	BYTE i;
+    volatile BYTE Dummy;
+    BYTE vSPIONSave;
     #if defined(__18CXX)
-    uint8_t SPICON1Save;
+    BYTE SPICON1Save;
     #elif defined(__C30__)
-    uint16_t SPICON1Save;
+    WORD SPICON1Save;
     #else
-    uint32_t SPICON1Save;
+    DWORD SPICON1Save;
     #endif
 
     SPIFLASH_CS_IO = 1;
@@ -235,20 +278,24 @@ void SPIFlashInit(void)
 
     // Clear Write-Protect on all memory locations
     SPIFLASH_CS_IO = 0;
-	
-    spi_transfer(WRSR);
-    Dummy = spi_transfer(Dummy);
-	
-    spi_transfer(0x00); // Clear all block protect bits
-    Dummy = spi_transfer(Dummy);
-	
+    SPIFLASH_SSPBUF = WRSR;
+    WaitForDataByte();
+    Dummy = SPIFLASH_SSPBUF;
+    SPIFLASH_SSPBUF = 0x00; // Clear all block protect bits
+    WaitForDataByte();
+    Dummy = SPIFLASH_SSPBUF;
     SPIFLASH_CS_IO = 1;
+
+    // Restore SPI state
+    SPI_ON_BIT = 0;
+    SPIFLASH_SPICON1 = SPICON1Save;
+    SPI_ON_BIT = vSPIONSave;
 }
 
 
 /*****************************************************************************
   Function:
-    void SPIFlashReadArray(uint32_t dwAddress, uint8_t *vData, uint16_t wLength)
+    void SPIFlashReadArray(DWORD dwAddress, BYTE *vData, WORD wLength)
 
   Description:
     Reads an array of bytes from the SPI Flash module.
@@ -265,45 +312,73 @@ void SPIFlashInit(void)
   Returns:
     None
   ***************************************************************************/
-void SPIFlashReadArray(uint32_t dwAddress, uint8_t *vData, uint16_t wLength)
+void SPIFlashReadArray(DWORD dwAddress, BYTE *vData, WORD wLength)
 {
-    volatile uint8_t Dummy;
+    volatile BYTE Dummy;
+    BYTE vSPIONSave;
+    #if defined(__18CXX)
+    BYTE SPICON1Save;
+    #elif defined(__C30__)
+    WORD SPICON1Save;
+    #else
+    DWORD SPICON1Save;
+    #endif
 
     // Ignore operations when the destination is NULL or nothing to read
     if(vData == NULL || wLength == 0)
         return;
 
+    // Save SPI state (clock speed)
+    SPICON1Save = SPIFLASH_SPICON1;
+    vSPIONSave = SPI_ON_BIT;
+
+    // Configure SPI
+    SPI_ON_BIT = 0;
+    SPIFLASH_SPICON1 = PROPER_SPICON1;
+    SPI_ON_BIT = 1;
+
     // Activate chip select
     SPIFLASH_CS_IO = 0;
+    ClearSPIDoneFlag();
 
     // Send READ opcode
-    spi_transfer(READ);
-    Dummy = spi_transfer(Dummy);
+    SPIFLASH_SSPBUF = READ;
+    WaitForDataByte();
+    Dummy = SPIFLASH_SSPBUF;
 
     // Send address
-    spi_transfer(((uint8_t*)&dwAddress)[2]);
-    Dummy = spi_transfer(Dummy);
+    SPIFLASH_SSPBUF = ((BYTE*)&dwAddress)[2];
+    WaitForDataByte();
+    Dummy = SPIFLASH_SSPBUF;
 
-    spi_transfer(((uint8_t*)&dwAddress)[1]);
-    Dummy = spi_transfer(Dummy);
+    SPIFLASH_SSPBUF = ((BYTE*)&dwAddress)[1];
+    WaitForDataByte();
+    Dummy = SPIFLASH_SSPBUF;
 
-    spi_transfer(((uint8_t*)&dwAddress)[0]);
-    Dummy = spi_transfer(Dummy);
+    SPIFLASH_SSPBUF = ((BYTE*)&dwAddress)[0];
+    WaitForDataByte();
+    Dummy = SPIFLASH_SSPBUF;
 
     // Read data
     while(wLength--)
     {
-        spi_transfer(0);
-        *vData++ = spi_transfer(0);
+        SPIFLASH_SSPBUF = 0;
+        WaitForDataByte();
+        *vData++ = SPIFLASH_SSPBUF;
     }
 
     // Deactivate chip select
     SPIFLASH_CS_IO = 1;
+
+    // Restore SPI state
+    SPI_ON_BIT = 0;
+    SPIFLASH_SPICON1 = SPICON1Save;
+    SPI_ON_BIT = vSPIONSave;
 }
 
 /*****************************************************************************
   Function:
-    void SPIFlashBeginWrite(uint32_t dwAddr)
+    void SPIFlashBeginWrite(DWORD dwAddr)
 
   Summary:
     Prepares the SPI Flash module for writing.
@@ -337,14 +412,14 @@ void SPIFlashReadArray(uint32_t dwAddress, uint8_t *vData, uint16_t wLength)
     not in the erased state.  The chip will provide no indication that the
     write has failed, and will silently ignore the command.
   ***************************************************************************/
-void SPIFlashBeginWrite(uint32_t dwAddr)
+void SPIFlashBeginWrite(DWORD dwAddr)
 {
     dwWriteAddr = dwAddr;
 }
 
 /*****************************************************************************
   Function:
-    void SPIFlashWrite(uint8_t vData)
+    void SPIFlashWrite(BYTE vData)
 
   Summary:
     Writes a byte to the SPI Flash part.
@@ -371,9 +446,26 @@ void SPIFlashBeginWrite(uint32_t dwAddr)
     See Remarks in SPIFlashBeginWrite for important information about Flash
     memory parts.
   ***************************************************************************/
-void SPIFlashWrite(uint8_t vData)
+void SPIFlashWrite(BYTE vData)
 {
-    volatile uint8_t Dummy;
+    volatile BYTE Dummy;
+    BYTE vSPIONSave;
+    #if defined(__18CXX)
+    BYTE SPICON1Save;
+    #elif defined(__C30__)
+    WORD SPICON1Save;
+    #else
+    DWORD SPICON1Save;
+    #endif
+
+    // Save SPI state (clock speed)
+    SPICON1Save = SPIFLASH_SPICON1;
+    vSPIONSave = SPI_ON_BIT;
+
+    // Configure SPI
+    SPI_ON_BIT = 0;
+    SPIFLASH_SPICON1 = PROPER_SPICON1;
+    SPI_ON_BIT = 1;
 
     // If address is a boundary, erase a sector first
     if((dwWriteAddr & SPI_FLASH_SECTOR_MASK) == 0u)
@@ -384,33 +476,44 @@ void SPIFlashWrite(uint8_t vData)
 
     // Activate the chip select
     SPIFLASH_CS_IO = 0;
+    ClearSPIDoneFlag();
 
     // Issue WRITE command with address
-    spi_transfer(WRITE);
-    Dummy = spi_transfer(Dummy);
+    SPIFLASH_SSPBUF = WRITE;
+    WaitForDataByte();
+    Dummy = SPIFLASH_SSPBUF;
 
-    spi_transfer(((uint8_t*)&dwWriteAddr)[2]);
-    Dummy = spi_transfer(Dummy);
+    SPIFLASH_SSPBUF = ((BYTE*)&dwWriteAddr)[2];
+    WaitForDataByte();
+    Dummy = SPIFLASH_SSPBUF;
 
-    spi_transfer(((uint8_t*)&dwWriteAddr)[1]);
-    Dummy = spi_transfer(Dummy);
+    SPIFLASH_SSPBUF = ((BYTE*)&dwWriteAddr)[1];
+    WaitForDataByte();
+    Dummy = SPIFLASH_SSPBUF;
 
-    spi_transfer(((uint8_t*)&dwWriteAddr)[0]);
-    Dummy = spi_transfer(Dummy);
+    SPIFLASH_SSPBUF = ((BYTE*)&dwWriteAddr)[0];
+    WaitForDataByte();
+    Dummy = SPIFLASH_SSPBUF;
 
     // Write the byte
-    spi_transfer(vData);
-    Dummy = spi_transfer(Dummy);
+    SPIFLASH_SSPBUF = vData;
+    WaitForDataByte();
+    Dummy = SPIFLASH_SSPBUF;
     dwWriteAddr++;
 
     // Deactivate chip select and wait for write to complete
     SPIFLASH_CS_IO = 1;
     _WaitWhileBusy();
+
+    // Restore SPI state
+    SPI_ON_BIT = 0;
+    SPIFLASH_SPICON1 = SPICON1Save;
+    SPI_ON_BIT = vSPIONSave;
 }
 
 /*****************************************************************************
   Function:
-    void SPIFlashWriteArray(uint8_t* vData, uint16_t wLen)
+    void SPIFlashWriteArray(BYTE* vData, WORD wLen)
 
   Summary:
     Writes an array of bytes to the SPI Flash part.
@@ -438,16 +541,33 @@ void SPIFlashWrite(uint8_t vData)
     See Remarks in SPIFlashBeginWrite for important information about Flash
     memory parts.
   ***************************************************************************/
-void SPIFlashWriteArray(uint8_t* vData, uint16_t wLen)
+void SPIFlashWriteArray(BYTE* vData, WORD wLen)
 {
-    volatile uint8_t Dummy;
-    bool isStarted;
-    uint8_t vOpcode;
-    uint8_t i;
+    volatile BYTE Dummy;
+    BYTE vSPIONSave;
+    #if defined(__18CXX)
+    BYTE SPICON1Save;
+    #elif defined(__C30__)
+    WORD SPICON1Save;
+    #else
+    DWORD SPICON1Save;
+    #endif
+    BOOL isStarted;
+    BYTE vOpcode;
+    BYTE i;
 
 	// Do nothing if no data to process
 	if(wLen == 0u)
 		return;
+
+    // Save SPI state (clock speed)
+    SPICON1Save = SPIFLASH_SPICON1;
+    vSPIONSave = SPI_ON_BIT;
+
+    // Configure SPI
+    SPI_ON_BIT = 0;
+    SPIFLASH_SPICON1 = PROPER_SPICON1;
+    SPI_ON_BIT = 1;
 
     // If starting at an odd address, write a single byte
     if((dwWriteAddr & 0x01) && wLen)
@@ -497,19 +617,24 @@ void SPIFlashWriteArray(uint8_t* vData, uint16_t wLen)
 
             // Activate the chip select
             SPIFLASH_CS_IO = 0;
+            ClearSPIDoneFlag();
 
             // Issue WRITE_xxx_STREAM command with address
-			spi_transfer(vOpcode);
-            Dummy = spi_transfer(Dummy);
+			SPIFLASH_SSPBUF = vOpcode;
+            WaitForDataByte();
+            Dummy = SPIFLASH_SSPBUF;
 
-            spi_transfer(((uint8_t*)&dwWriteAddr)[2]);
-            Dummy = spi_transfer(Dummy);
+            SPIFLASH_SSPBUF = ((BYTE*)&dwWriteAddr)[2];
+            WaitForDataByte();
+            Dummy = SPIFLASH_SSPBUF;
 
-            spi_transfer(((uint8_t*)&dwWriteAddr)[1]);
-            Dummy = spi_transfer(Dummy);
+            SPIFLASH_SSPBUF = ((BYTE*)&dwWriteAddr)[1];
+            WaitForDataByte();
+            Dummy = SPIFLASH_SSPBUF;
 
-            spi_transfer(((uint8_t*)&dwWriteAddr)[0]);
-            Dummy = spi_transfer(Dummy);
+            SPIFLASH_SSPBUF = ((BYTE*)&dwWriteAddr)[0];
+            WaitForDataByte();
+            Dummy = SPIFLASH_SSPBUF;
 
             isStarted = TRUE;
         }
@@ -518,19 +643,22 @@ void SPIFlashWriteArray(uint8_t* vData, uint16_t wLen)
         {
             // Assert the chip select pin
             SPIFLASH_CS_IO = 0;
+            ClearSPIDoneFlag();
 
             // Issue the WRITE_STREAM command for continuation
-            spi_transfer(vOpcode);
-            Dummy = spi_transfer(Dummy);
+            SPIFLASH_SSPBUF = vOpcode;
+            WaitForDataByte();
+            Dummy = SPIFLASH_SSPBUF;
         }
 
         // Write a byte or two
         for(i = 0; i <= deviceCaps.bits.bWriteWordStream; i++)
         {
-	        spi_transfer(*vData++);		
+	        SPIFLASH_SSPBUF = *vData++;
 	        dwWriteAddr++;
 	        wLen--;
-	        Dummy = spi_transfer(Dummy);
+	        WaitForDataByte();
+	        Dummy = SPIFLASH_SSPBUF;
 		}
 
         // Release the chip select to begin the write
@@ -552,12 +680,17 @@ void SPIFlashWriteArray(uint8_t* vData, uint16_t wLen)
     // If a byte remains, write the odd address
     if(wLen)
         SPIFlashWrite(*vData);
+
+    // Restore SPI state
+    SPI_ON_BIT = 0;
+    SPIFLASH_SPICON1 = SPICON1Save;
+    SPI_ON_BIT = vSPIONSave;
 }
 
 
 /*****************************************************************************
   Function:
-    void SPIFlashEraseSector(uint32_t dwAddr)
+    void SPIFlashEraseSector(DWORD dwAddr)
 
   Summary:
     Erases a sector.
@@ -580,40 +713,67 @@ void SPIFlashWriteArray(uint8_t* vData, uint16_t wLen)
     See Remarks in SPIFlashBeginWrite for important information about Flash
     memory parts.
   ***************************************************************************/
-void SPIFlashEraseSector(uint32_t dwAddr)
+void SPIFlashEraseSector(DWORD dwAddr)
 {
-    volatile uint8_t Dummy;
+    volatile BYTE Dummy;
+    BYTE vSPIONSave;
+    #if defined(__18CXX)
+    BYTE SPICON1Save;
+    #elif defined(__C30__)
+    WORD SPICON1Save;
+    #else
+    DWORD SPICON1Save;
+    #endif
+
+    // Save SPI state (clock speed)
+    SPICON1Save = SPIFLASH_SPICON1;
+    vSPIONSave = SPI_ON_BIT;
+
+    // Configure SPI
+    SPI_ON_BIT = 0;
+    SPIFLASH_SPICON1 = PROPER_SPICON1;
+    SPI_ON_BIT = 1;
 
     // Enable writing
     _SendCmd(WREN);
 
     // Activate the chip select
     SPIFLASH_CS_IO = 0;
+    ClearSPIDoneFlag();
 
     // Issue ERASE command with address
-	spi_transfer(ERASE_4K);
-	Dummy = spi_transfer(Dummy);
+    SPIFLASH_SSPBUF = ERASE_4K;
+    WaitForDataByte();
+    Dummy = SPIFLASH_SSPBUF;
 
-    spi_transfer(((uint8_t*)&dwAddr)[2]);
-    Dummy = spi_transfer(Dummy);
+    SPIFLASH_SSPBUF = ((BYTE*)&dwAddr)[2];
+    WaitForDataByte();
+    Dummy = SPIFLASH_SSPBUF;
 
-    spi_transfer(((uint8_t*)&dwAddr)[1]);
-    Dummy = spi_transfer(Dummy);
+    SPIFLASH_SSPBUF = ((BYTE*)&dwAddr)[1];
+    WaitForDataByte();
+    Dummy = SPIFLASH_SSPBUF;
 
-    spi_transfer(((uint8_t*)&dwAddr)[0]);
-    Dummy = spi_transfer(Dummy);
+    SPIFLASH_SSPBUF = ((BYTE*)&dwAddr)[0];
+    WaitForDataByte();
+    Dummy = SPIFLASH_SSPBUF;
 
     // Deactivate chip select to perform the erase
     SPIFLASH_CS_IO = 1;
 
     // Wait for erase to complete
     _WaitWhileBusy();
+
+    // Restore SPI state
+    SPI_ON_BIT = 0;
+    SPIFLASH_SPICON1 = SPICON1Save;
+    SPI_ON_BIT = vSPIONSave;
 }
 
 
 /*****************************************************************************
   Function:
-    static void _SendCmd(uint8_t cmd)
+    static void _SendCmd(BYTE cmd)
 
   Summary:
     Sends a single-byte command to the SPI Flash part.
@@ -633,15 +793,16 @@ void SPIFlashEraseSector(uint32_t dwAddr)
   Returns:
     None
   ***************************************************************************/
-static void _SendCmd(uint8_t cmd)
+static void _SendCmd(BYTE cmd)
 {
-	uint8_t dummy;
     // Activate chip select
     SPIFLASH_CS_IO = 0;
+    ClearSPIDoneFlag();
 
     // Send instruction
-	spi_transfer(cmd);
-    cmd = spi_transfer(dummy);
+    SPIFLASH_SSPBUF = cmd;
+    WaitForDataByte();
+    cmd = SPIFLASH_SSPBUF;
 
     // Deactivate chip select
     SPIFLASH_CS_IO = 1;
@@ -670,20 +831,23 @@ static void _SendCmd(uint8_t cmd)
   ***************************************************************************/
 static void _WaitWhileBusy(void)
 {
-    volatile uint8_t Dummy;
+    volatile BYTE Dummy;
 
     // Activate chip select
     SPIFLASH_CS_IO = 0;
+    ClearSPIDoneFlag();
 
     // Send Read Status Register instruction
-    spi_transfer(RDSR);
-    Dummy = spi_transfer(Dummy);
+    SPIFLASH_SSPBUF = RDSR;
+    WaitForDataByte();
+    Dummy = SPIFLASH_SSPBUF;
 
     // Poll the BUSY bit
     do
     {
-        spi_transfer(0x00);
-        Dummy = spi_transfer(Dummy);
+        SPIFLASH_SSPBUF = 0x00;
+        WaitForDataByte();
+        Dummy = SPIFLASH_SSPBUF;
     } while(Dummy & BUSY);
 
     // Deactivate chip select
@@ -714,9 +878,9 @@ static void _WaitWhileBusy(void)
   ***************************************************************************/
 //static void _GetStatus()
 //{
-//	volatile uint8_t Dummy;
-//  static uint8_t statuses[16];
-//  static uint8_t *status = statuses;
+//	volatile BYTE Dummy;
+//  static BYTE statuses[16];
+//  static BYTE *status = statuses;
 //
 //  // Activate chip select
 //  SPIFLASH_CS_IO = 0;

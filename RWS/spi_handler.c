@@ -67,7 +67,7 @@ void spi_init(void)
 /*                SPI Send / Receive function definitions               */
 /************************************************************************/
 /* SPI Send and Receive 1 Byte function */
-static uint8_t spi_transfer(uint8_t u8data)
+uint8_t spi_transfer(uint8_t u8data)
 {
 	SPDR = u8data;
 	while(!(SPSR & (1<<SPIF))){}

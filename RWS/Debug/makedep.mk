@@ -8,6 +8,8 @@ main.c
 
 spi_handler.c
 
+sst25\SPIFlash.c
+
 timer_handler.c
 
 uart_handler.c

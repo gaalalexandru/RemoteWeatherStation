@@ -147,6 +147,12 @@
     <Compile Include="spi_handler.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="sst25\SPIFlash.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="sst25\SPIFlash.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="timer_handler.c">
       <SubType>compile</SubType>
     </Compile>
@@ -162,6 +168,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="bme280" />
+    <Folder Include="sst25" />
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
 </Project>
