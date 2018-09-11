@@ -29,6 +29,7 @@
 struct bme280_dev sensor_interf;
 int8_t rslt = BME280_OK;
 
+#define OUTPUT_LOG
 
 void print_sensor_data(struct bme280_data *comp_data)
 {

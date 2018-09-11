@@ -6,6 +6,8 @@ c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-t
                               bme280/bme280.o (__udivmodsi4)
 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_exit.o)
                               c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/../../../../avr/lib/avr4/crtm8.o (exit)
+c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_copy_data.o)
+                              main.o (__do_copy_data)
 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_clear_bss.o)
                               main.o (__do_clear_bss)
 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_muluhisi3.o)
@@ -32,8 +34,6 @@ Discarded input sections
  .text          0x00000000        0x0 main.o
  .data          0x00000000        0x0 main.o
  .bss           0x00000000        0x0 main.o
- .text.print_sensor_data
-                0x00000000        0x2 main.o
  .text          0x00000000        0x0 spi_handler.o
  .data          0x00000000        0x0 spi_handler.o
  .bss           0x00000000        0x0 spi_handler.o
@@ -45,10 +45,6 @@ Discarded input sections
  .text          0x00000000        0x0 uart_handler.o
  .data          0x00000000        0x0 uart_handler.o
  .bss           0x00000000        0x0 uart_handler.o
- .text.uart_send_string
-                0x00000000       0x1c uart_handler.o
- .text.uart_send_udec
-                0x00000000       0x36 uart_handler.o
  .text.uart_rx_buflen
                 0x00000000        0xc uart_handler.o
  .text.uart_get_char
@@ -101,6 +97,22 @@ Discarded input sections
                 0x00000000        0x0 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_exit.o)
  .text.libgcc.fixed
                 0x00000000        0x0 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_exit.o)
+ .text          0x00000000        0x0 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_copy_data.o)
+ .data          0x00000000        0x0 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_copy_data.o)
+ .bss           0x00000000        0x0 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_copy_data.o)
+ .text.libgcc.mul
+                0x00000000        0x0 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_copy_data.o)
+ .text.libgcc.div
+                0x00000000        0x0 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_copy_data.o)
+ .text.libgcc   0x00000000        0x0 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_copy_data.o)
+ .text.libgcc.prologue
+                0x00000000        0x0 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_copy_data.o)
+ .text.libgcc.builtins
+                0x00000000        0x0 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_copy_data.o)
+ .text.libgcc.fmul
+                0x00000000        0x0 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_copy_data.o)
+ .text.libgcc.fixed
+                0x00000000        0x0 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_copy_data.o)
  .text          0x00000000        0x0 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_clear_bss.o)
  .data          0x00000000        0x0 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_clear_bss.o)
  .bss           0x00000000        0x0 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_clear_bss.o)
@@ -279,7 +291,7 @@ END GROUP
 .rela.plt
  *(.rela.plt)
 
-.text           0x00000000     0x14fe
+.text           0x00000000     0x163c
  *(.vectors)
  .vectors       0x00000000       0x26 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/../../../../avr/lib/avr4/crtm8.o
                 0x00000000                __vector_default
@@ -318,8 +330,10 @@ END GROUP
  *(.init3)
  *(.init3)
  *(.init4)
- .init4         0x00000032       0x10 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_clear_bss.o)
-                0x00000032                __do_clear_bss
+ .init4         0x00000032       0x16 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_copy_data.o)
+                0x00000032                __do_copy_data
+ .init4         0x00000048       0x10 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_clear_bss.o)
+                0x00000048                __do_clear_bss
  *(.init4)
  *(.init5)
  *(.init5)
@@ -330,122 +344,131 @@ END GROUP
  *(.init8)
  *(.init8)
  *(.init9)
- .init9         0x00000042        0x4 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/../../../../avr/lib/avr4/crtm8.o
+ .init9         0x00000058        0x4 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/../../../../avr/lib/avr4/crtm8.o
  *(.init9)
  *(.text)
- .text          0x00000046        0x2 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/../../../../avr/lib/avr4/crtm8.o
-                0x00000046                __vector_1
-                0x00000046                __bad_interrupt
-                0x00000046                __vector_6
-                0x00000046                __vector_13
-                0x00000046                __vector_17
-                0x00000046                __vector_7
-                0x00000046                __vector_5
-                0x00000046                __vector_4
-                0x00000046                __vector_9
-                0x00000046                __vector_2
-                0x00000046                __vector_15
-                0x00000046                __vector_8
-                0x00000046                __vector_14
-                0x00000046                __vector_10
-                0x00000046                __vector_16
-                0x00000046                __vector_18
-                0x00000048                . = ALIGN (0x2)
+ .text          0x0000005c        0x2 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/../../../../avr/lib/avr4/crtm8.o
+                0x0000005c                __vector_1
+                0x0000005c                __bad_interrupt
+                0x0000005c                __vector_6
+                0x0000005c                __vector_13
+                0x0000005c                __vector_17
+                0x0000005c                __vector_7
+                0x0000005c                __vector_5
+                0x0000005c                __vector_4
+                0x0000005c                __vector_9
+                0x0000005c                __vector_2
+                0x0000005c                __vector_15
+                0x0000005c                __vector_8
+                0x0000005c                __vector_14
+                0x0000005c                __vector_10
+                0x0000005c                __vector_16
+                0x0000005c                __vector_18
+                0x0000005e                . = ALIGN (0x2)
  *(.text.*)
  .text.null_ptr_check
-                0x00000048       0x32 bme280/bme280.o
+                0x0000005e       0x32 bme280/bme280.o
  .text.bme280_get_regs
-                0x0000007a       0x4c bme280/bme280.o
-                0x0000007a                bme280_get_regs
+                0x00000090       0x4c bme280/bme280.o
+                0x00000090                bme280_get_regs
  .text.bme280_set_regs
-                0x000000c6      0x12a bme280/bme280.o
-                0x000000c6                bme280_set_regs
+                0x000000dc      0x12a bme280/bme280.o
+                0x000000dc                bme280_set_regs
  .text.set_osr_settings
-                0x000001f0       0xda bme280/bme280.o
+                0x00000206       0xda bme280/bme280.o
  .text.set_filter_standby_settings
-                0x000002ca       0x82 bme280/bme280.o
+                0x000002e0       0x82 bme280/bme280.o
  .text.bme280_get_sensor_mode
-                0x0000034c       0x32 bme280/bme280.o
-                0x0000034c                bme280_get_sensor_mode
+                0x00000362       0x32 bme280/bme280.o
+                0x00000362                bme280_get_sensor_mode
  .text.bme280_soft_reset
-                0x0000037e       0x5c bme280/bme280.o
-                0x0000037e                bme280_soft_reset
+                0x00000394       0x5c bme280/bme280.o
+                0x00000394                bme280_soft_reset
  .text.bme280_init
-                0x000003da      0x204 bme280/bme280.o
-                0x000003da                bme280_init
+                0x000003f0      0x204 bme280/bme280.o
+                0x000003f0                bme280_init
  .text.put_device_to_sleep
-                0x000005de       0xa2 bme280/bme280.o
+                0x000005f4       0xa2 bme280/bme280.o
  .text.bme280_set_sensor_settings
-                0x00000680       0x80 bme280/bme280.o
-                0x00000680                bme280_set_sensor_settings
+                0x00000696       0x80 bme280/bme280.o
+                0x00000696                bme280_set_sensor_settings
  .text.bme280_set_sensor_mode
-                0x00000700       0x7e bme280/bme280.o
-                0x00000700                bme280_set_sensor_mode
+                0x00000716       0x7e bme280/bme280.o
+                0x00000716                bme280_set_sensor_mode
  .text.bme280_parse_sensor_data
-                0x0000077e       0xde bme280/bme280.o
-                0x0000077e                bme280_parse_sensor_data
+                0x00000794       0xde bme280/bme280.o
+                0x00000794                bme280_parse_sensor_data
  .text.bme280_compensate_data
-                0x0000085c      0x8a8 bme280/bme280.o
-                0x0000085c                bme280_compensate_data
+                0x00000872      0x8a8 bme280/bme280.o
+                0x00000872                bme280_compensate_data
  .text.bme280_get_sensor_data
-                0x00001104       0xa2 bme280/bme280.o
-                0x00001104                bme280_get_sensor_data
- .text.setup_measurement_normal_mode
-                0x000011a6       0x2a main.o
-                0x000011a6                setup_measurement_normal_mode
- .text.main     0x000011d0       0x8e main.o
-                0x000011d0                main
+                0x0000111a       0xa2 bme280/bme280.o
+                0x0000111a                bme280_get_sensor_data
+ .text.print_sensor_data
+                0x000011bc       0x54 main.o
+                0x000011bc                print_sensor_data
+ .text.setup_measurement_weather_monitoring
+                0x00001210       0x32 main.o
+                0x00001210                setup_measurement_weather_monitoring
+ .text.main     0x00001242      0x108 main.o
+                0x00001242                main
  .text.spi_init
-                0x0000125e       0x20 spi_handler.o
-                0x0000125e                spi_init
+                0x0000134a       0x20 spi_handler.o
+                0x0000134a                spi_init
  .text.spi_transfer_bme280
-                0x0000127e       0x3a spi_handler.o
-                0x0000127e                spi_transfer_bme280
+                0x0000136a       0x3a spi_handler.o
+                0x0000136a                spi_transfer_bme280
  .text.timer2_init
-                0x000012b8       0x12 timer_handler.o
-                0x000012b8                timer2_init
+                0x000013a4       0x12 timer_handler.o
+                0x000013a4                timer2_init
  .text.timer_delay_ms
-                0x000012ca       0x40 timer_handler.o
-                0x000012ca                timer_delay_ms
+                0x000013b6       0x40 timer_handler.o
+                0x000013b6                timer_delay_ms
  .text.__vector_3
-                0x0000130a       0x4a timer_handler.o
-                0x0000130a                __vector_3
+                0x000013f6       0x4a timer_handler.o
+                0x000013f6                __vector_3
  .text.uart_init
-                0x00001354       0x3c uart_handler.o
-                0x00001354                uart_init
+                0x00001440       0x3c uart_handler.o
+                0x00001440                uart_init
  .text.uart_tx_buflen
-                0x00001390        0xc uart_handler.o
-                0x00001390                uart_tx_buflen
+                0x0000147c        0xc uart_handler.o
+                0x0000147c                uart_tx_buflen
  .text.uart_send_char
-                0x0000139c       0x3c uart_handler.o
-                0x0000139c                uart_send_char
+                0x00001488       0x3c uart_handler.o
+                0x00001488                uart_send_char
+ .text.uart_send_string
+                0x000014c4       0x1c uart_handler.o
+                0x000014c4                uart_send_string
+ .text.uart_send_udec
+                0x000014e0       0x36 uart_handler.o
+                0x000014e0                uart_send_udec
  .text.__vector_12
-                0x000013d8       0x4e uart_handler.o
-                0x000013d8                __vector_12
+                0x00001516       0x4e uart_handler.o
+                0x00001516                __vector_12
  .text.__vector_11
-                0x00001426       0x3a uart_handler.o
-                0x00001426                __vector_11
+                0x00001564       0x3a uart_handler.o
+                0x00001564                __vector_11
  .text.libgcc.mul
-                0x00001460       0x1e c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_mulsi3.o)
-                0x00001460                __mulsi3
+                0x0000159e       0x1e c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_mulsi3.o)
+                0x0000159e                __mulsi3
  .text.libgcc.div
-                0x0000147e       0x44 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_udivmodsi4.o)
-                0x0000147e                __udivmodsi4
+                0x000015bc       0x44 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_udivmodsi4.o)
+                0x000015bc                __udivmodsi4
  .text.libgcc.mul
-                0x000014c2       0x14 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_muluhisi3.o)
-                0x000014c2                __muluhisi3
+                0x00001600       0x14 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_muluhisi3.o)
+                0x00001600                __muluhisi3
  .text.libgcc.mul
-                0x000014d6        0xc c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_mulshisi3.o)
-                0x000014d6                __mulshisi3
-                0x000014da                __mulohisi3
+                0x00001614        0xc c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_mulshisi3.o)
+                0x00001614                __mulshisi3
+                0x00001618                __mulohisi3
  .text.libgcc.mul
-                0x000014e2       0x18 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_umulhisi3.o)
-                0x000014e2                __umulhisi3
-                0x000014fa                . = ALIGN (0x2)
+                0x00001620       0x18 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_umulhisi3.o)
+                0x00001620                __umulhisi3
+                0x00001638                . = ALIGN (0x2)
  *(.fini9)
- .fini9         0x000014fa        0x0 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_exit.o)
-                0x000014fa                _exit
-                0x000014fa                exit
+ .fini9         0x00001638        0x0 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_exit.o)
+                0x00001638                _exit
+                0x00001638                exit
  *(.fini9)
  *(.fini8)
  *(.fini8)
@@ -464,50 +487,52 @@ END GROUP
  *(.fini1)
  *(.fini1)
  *(.fini0)
- .fini0         0x000014fa        0x4 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_exit.o)
+ .fini0         0x00001638        0x4 c:/program files (x86)/atmel/atmel toolchain/avr8 gcc/native/3.4.1061/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.8.1/avr4\libgcc.a(_exit.o)
  *(.fini0)
-                0x000014fe                _etext = .
+                0x0000163c                _etext = .
 
-.data           0x00800060        0x0 load address 0x000014fe
+.data           0x00800060       0xe0 load address 0x0000163c
                 0x00800060                PROVIDE (__data_start, .)
  *(.data)
  *(.data*)
  *(.rodata)
  *(.rodata*)
+ .rodata.str1.1
+                0x00800060       0xe0 main.o
  *(.gnu.linkonce.d*)
-                0x00800060                . = ALIGN (0x2)
-                0x00800060                _edata = .
-                0x00800060                PROVIDE (__data_end, .)
+                0x00800140                . = ALIGN (0x2)
+                0x00800140                _edata = .
+                0x00800140                PROVIDE (__data_end, .)
 
-.bss            0x00800060       0xfd
-                0x00800060                PROVIDE (__bss_start, .)
+.bss            0x00800140       0xfd
+                0x00800140                PROVIDE (__bss_start, .)
  *(.bss)
  *(.bss*)
- .bss.rslt      0x00800060        0x1 main.o
-                0x00800060                rslt
+ .bss.rslt      0x00800140        0x1 main.o
+                0x00800140                rslt
  .bss.timer_system_ms
-                0x00800061        0x4 timer_handler.o
-                0x00800061                timer_system_ms
- .bss.cr_flag   0x00800065        0x1 uart_handler.o
- .bss.rx_out    0x00800066        0x1 uart_handler.o
- .bss.rx_in     0x00800067        0x1 uart_handler.o
- .bss.tx_out    0x00800068        0x1 uart_handler.o
- .bss.tx_in     0x00800069        0x1 uart_handler.o
- .bss.rxbuf     0x0080006a       0x80 uart_handler.o
- .bss.txbuf     0x008000ea       0x40 uart_handler.o
+                0x00800141        0x4 timer_handler.o
+                0x00800141                timer_system_ms
+ .bss.cr_flag   0x00800145        0x1 uart_handler.o
+ .bss.rx_out    0x00800146        0x1 uart_handler.o
+ .bss.rx_in     0x00800147        0x1 uart_handler.o
+ .bss.tx_out    0x00800148        0x1 uart_handler.o
+ .bss.tx_in     0x00800149        0x1 uart_handler.o
+ .bss.rxbuf     0x0080014a       0x80 uart_handler.o
+ .bss.txbuf     0x008001ca       0x40 uart_handler.o
  *(COMMON)
- COMMON         0x0080012a       0x33 main.o
-                0x0080012a                sensor_interf
-                0x0080015d                PROVIDE (__bss_end, .)
-                0x000014fe                __data_load_start = LOADADDR (.data)
-                0x000014fe                __data_load_end = (__data_load_start + SIZEOF (.data))
+ COMMON         0x0080020a       0x33 main.o
+                0x0080020a                sensor_interf
+                0x0080023d                PROVIDE (__bss_end, .)
+                0x0000163c                __data_load_start = LOADADDR (.data)
+                0x0000171c                __data_load_end = (__data_load_start + SIZEOF (.data))
 
-.noinit         0x0080015d        0x0
-                0x0080015d                PROVIDE (__noinit_start, .)
+.noinit         0x0080023d        0x0
+                0x0080023d                PROVIDE (__noinit_start, .)
  *(.noinit*)
-                0x0080015d                PROVIDE (__noinit_end, .)
-                0x0080015d                _end = .
-                0x0080015d                PROVIDE (__heap_start, .)
+                0x0080023d                PROVIDE (__noinit_end, .)
+                0x0080023d                _end = .
+                0x0080023d                PROVIDE (__heap_start, .)
 
 .eeprom         0x00810000        0x0
  *(.eeprom*)
@@ -586,58 +611,58 @@ END GROUP
 .debug_pubnames
  *(.debug_pubnames)
 
-.debug_info     0x00000000     0x261d
+.debug_info     0x00000000     0x28b1
  *(.debug_info .gnu.linkonce.wi.*)
  .debug_info    0x00000000     0x19f7 bme280/bme280.o
- .debug_info    0x000019f7      0x606 main.o
- .debug_info    0x00001ffd      0x18a spi_handler.o
- .debug_info    0x00002187      0x144 timer_handler.o
- .debug_info    0x000022cb      0x352 uart_handler.o
+ .debug_info    0x000019f7      0x89a main.o
+ .debug_info    0x00002291      0x18a spi_handler.o
+ .debug_info    0x0000241b      0x144 timer_handler.o
+ .debug_info    0x0000255f      0x352 uart_handler.o
 
-.debug_abbrev   0x00000000      0x74f
+.debug_abbrev   0x00000000      0x74b
  *(.debug_abbrev)
  .debug_abbrev  0x00000000      0x21c bme280/bme280.o
- .debug_abbrev  0x0000021c      0x198 main.o
- .debug_abbrev  0x000003b4      0x132 spi_handler.o
- .debug_abbrev  0x000004e6       0xeb timer_handler.o
- .debug_abbrev  0x000005d1      0x17e uart_handler.o
+ .debug_abbrev  0x0000021c      0x194 main.o
+ .debug_abbrev  0x000003b0      0x132 spi_handler.o
+ .debug_abbrev  0x000004e2       0xeb timer_handler.o
+ .debug_abbrev  0x000005cd      0x17e uart_handler.o
 
-.debug_line     0x00000000      0x868
+.debug_line     0x00000000      0x885
  *(.debug_line .debug_line.* .debug_line_end)
  .debug_line    0x00000000      0x36f bme280/bme280.o
- .debug_line    0x0000036f      0x157 main.o
- .debug_line    0x000004c6       0xf8 spi_handler.o
- .debug_line    0x000005be      0x103 timer_handler.o
- .debug_line    0x000006c1      0x1a7 uart_handler.o
+ .debug_line    0x0000036f      0x174 main.o
+ .debug_line    0x000004e3       0xf8 spi_handler.o
+ .debug_line    0x000005db      0x103 timer_handler.o
+ .debug_line    0x000006de      0x1a7 uart_handler.o
 
-.debug_frame    0x00000000      0x5a8
+.debug_frame    0x00000000      0x5b4
  *(.debug_frame)
  .debug_frame   0x00000000      0x328 bme280/bme280.o
- .debug_frame   0x00000328       0x60 main.o
- .debug_frame   0x00000388       0x34 spi_handler.o
- .debug_frame   0x000003bc       0x80 timer_handler.o
- .debug_frame   0x0000043c      0x16c uart_handler.o
+ .debug_frame   0x00000328       0x6c main.o
+ .debug_frame   0x00000394       0x34 spi_handler.o
+ .debug_frame   0x000003c8       0x80 timer_handler.o
+ .debug_frame   0x00000448      0x16c uart_handler.o
 
-.debug_str      0x00000000      0x8d2
+.debug_str      0x00000000      0x8cc
  *(.debug_str)
  .debug_str     0x00000000      0x691 bme280/bme280.o
                                 0x758 (size before relaxing)
- .debug_str     0x00000691       0xda main.o
-                                0x3fd (size before relaxing)
- .debug_str     0x0000076b       0x49 spi_handler.o
+ .debug_str     0x00000691       0xf4 main.o
+                                0x417 (size before relaxing)
+ .debug_str     0x00000785       0x49 spi_handler.o
                                 0x1c9 (size before relaxing)
- .debug_str     0x000007b4       0x49 timer_handler.o
+ .debug_str     0x000007ce       0x49 timer_handler.o
                                 0x1af (size before relaxing)
- .debug_str     0x000007fd       0xd5 uart_handler.o
+ .debug_str     0x00000817       0xb5 uart_handler.o
                                 0x255 (size before relaxing)
 
-.debug_loc      0x00000000     0x25ee
+.debug_loc      0x00000000     0x2653
  *(.debug_loc)
  .debug_loc     0x00000000     0x2058 bme280/bme280.o
- .debug_loc     0x00002058       0xac main.o
- .debug_loc     0x00002104       0x8a spi_handler.o
- .debug_loc     0x0000218e       0x92 timer_handler.o
- .debug_loc     0x00002220      0x3ce uart_handler.o
+ .debug_loc     0x00002058      0x111 main.o
+ .debug_loc     0x00002169       0x8a spi_handler.o
+ .debug_loc     0x000021f3       0x92 timer_handler.o
+ .debug_loc     0x00002285      0x3ce uart_handler.o
 
 .debug_macinfo
  *(.debug_macinfo)
