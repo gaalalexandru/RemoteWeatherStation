@@ -135,6 +135,9 @@
     <Compile Include="configuration.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="flash_memory_map.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="main.c">
       <SubType>compile</SubType>
     </Compile>
