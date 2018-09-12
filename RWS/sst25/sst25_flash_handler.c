@@ -117,7 +117,7 @@ static void _WaitWhileBusy(void);
 
 /*****************************************************************************
   Function:
-	void SPIFlashInit(void)
+	void sst25_flash_init(void)
 
   Description:
 	Initializes SPI Flash module.
@@ -138,7 +138,7 @@ static void _WaitWhileBusy(void);
 	This function sends WRDI to clear any pending write operation, and also
 	clears the software write-protect on all memory locations.
   ***************************************************************************/
-void SPIFlashInit(void)
+void sst25_flash_init(void)
 {
 	volatile uint8_t u8SerialReturnData = 0;
 
@@ -225,7 +225,7 @@ void SPIFlashInit(void)
 	Reads an array of bytes from the SPI Flash module.
 
   Precondition:
-	SPIFlashInit has been called, and the chip is not busy (should be
+	sst25_flash_init has been called, and the chip is not busy (should be
 	handled elsewhere automatically.)
 
   Parameters:
@@ -254,14 +254,14 @@ void sst25_read_array(uint32_t u32address, uint8_t *pu8data, uint16_t u16len)
 	#if SST25_LOG_ACTIV
 	uart_send_string("Address split into bytes: ");
 	uart_newline();
-	//uart_send_char(((uint8_t*)&u32address)[2]);
-	uart_send_char((uint8_t)((u32address>>16)&(0xFF)));
+	uart_send_char(((uint8_t*)&u32address)[2]);
+	//uart_send_char((uint8_t)((u32address>>16)&(0xFF)));
 	uart_newline();
-	//uart_send_char(((uint8_t*)&u32address)[1]);
-	uart_send_char((uint8_t)((u32address>>8)&(0xFF)));
+	uart_send_char(((uint8_t*)&u32address)[1]);
+	//uart_send_char((uint8_t)((u32address>>8)&(0xFF)));
 	uart_newline();
-	//uart_send_char(((uint8_t*)&u32address)[0]);
-	uart_send_char((uint8_t)(u32address&0xFF));
+	uart_send_char(((uint8_t*)&u32address)[0]);
+	//uart_send_char((uint8_t)(u32address&0xFF));
 	uart_newline();
 	#endif  //SST25_LOG_ACTIV
 
@@ -270,17 +270,12 @@ void sst25_read_array(uint32_t u32address, uint8_t *pu8data, uint16_t u16len)
 	//Dummy = spi_transfer(Dummy);
 
 	// Send address
-	//spi_transfer(((uint8_t*)&u32address)[2]);
-	spi_transfer(0x00);
-	spi_transfer(0x00);
-	spi_transfer(0x00);
-	//Dummy = spi_transfer(Dummy);
-	
-	//spi_transfer(((uint8_t*)&u32address)[1]);
-	//Dummy = spi_transfer(Dummy);
-
-	//spi_transfer(((uint8_t*)&u32address)[0]);
-	//Dummy = spi_transfer(Dummy);
+	//spi_transfer(0x00);
+	//spi_transfer(0x00);
+	//spi_transfer(0x00);
+	spi_transfer(((uint8_t*)&u32address)[2]);
+	spi_transfer(((uint8_t*)&u32address)[1]);
+	spi_transfer(((uint8_t*)&u32address)[0]);
 
 	// Read data
 	while(u16len--)
@@ -308,23 +303,21 @@ void sst25_read_array(uint32_t u32address, uint8_t *pu8data, uint16_t u16len)
 
 /*****************************************************************************
   Function:
-	void SPIFlashBeginWrite(uint32_t dwAddr)
+	void sst25_begin_write(uint32_t u32Addr)
 
   Summary:
 	Prepares the SPI Flash module for writing.
 
   Description:
 	Prepares the SPI Flash module for writing.  Subsequent calls to
-	SPIFlashWrite or SPIFlashWriteArray will begin at this location and
+	sst25_write or sst25_flash_write_array will begin at this location and
 	continue sequentially.
 
-	SPI Flash
-
   Precondition:
-	SPIFlashInit has been called.
+	sst25_flash_init has been called.
 
   Parameters:
-	dwAddr - Address where the writing will begin
+	u32Addr - Address where the writing will begin
 
   Returns:
 	None
@@ -333,23 +326,23 @@ void sst25_read_array(uint32_t u32address, uint8_t *pu8data, uint16_t u16len)
 	Flash parts have large sector sizes, and can only erase entire sectors
 	at once.  The SST parts for which this library was written have sectors
 	that are 4kB in size.  Your application must ensure that writes begin on
-	a sector boundary so that the SPIFlashWrite functions will erase the
+	a sector boundary so that the sst25_flash_write functions will erase the
 	sector before attempting to write.  Entire sectors need not be written
 	at once, so applications can begin writing to the front of a sector,
-	perform other tasks, then later call SPIFlashBeginWrite and point to an
+	perform other tasks, then later call sst25_begin_write and point to an
 	address in this sector that has not yet been programmed.  However, care
 	must taken to ensure that writes are not attempted on addresses that are
 	not in the erased state.  The chip will provide no indication that the
 	write has failed, and will silently ignore the command.
   ***************************************************************************/
-void SPIFlashBeginWrite(uint32_t dwAddr)
+void sst25_begin_write(uint32_t u32Addr)
 {
 	dwWriteAddr = dwAddr;
 }
 
 /*****************************************************************************
   Function:
-	void SPIFlashWrite(uint8_t vData)
+	void sst25_write(uint8_t u8data)
 
   Summary:
 	Writes a byte to the SPI Flash part.
@@ -363,20 +356,20 @@ void SPIFlashBeginWrite(uint32_t dwAddr)
 	ignore the write command.
 
   Precondition:
-	SPIFlashInit and SPIFlashBeginWrite have been called, and the current
+	sst25_flash_init and sst25_begin_write have been called, and the current
 	address is either the front of a 4kB sector or has already been erased.
 
   Parameters:
-	vData - The byte to write to the next memory location.
+	u8data - The byte to write to the next memory location.
 
   Returns:
 	None
 
   Remarks:
-	See Remarks in SPIFlashBeginWrite for important information about Flash
+	See Remarks in sst25_begin_write for important information about Flash
 	memory parts.
   ***************************************************************************/
-void SPIFlashWrite(uint8_t vData)
+void sst25_write(uint8_t u8data)
 {
 	volatile uint8_t Dummy;
 
@@ -415,7 +408,7 @@ void SPIFlashWrite(uint8_t vData)
 
 /*****************************************************************************
   Function:
-	void SPIFlashWriteArray(uint8_t* vData, uint16_t wLen)
+	void sst25_flash_writeArray(uint8_t* vData, uint16_t wLen)
 
   Summary:
 	Writes an array of bytes to the SPI Flash part.
@@ -429,7 +422,7 @@ void SPIFlashWrite(uint8_t vData)
 	next sector boundary is crossed.
 
   Precondition:
-	SPIFlashInit and SPIFlashBeginWrite have been called, and the current
+	sst25_flash_init and SPIFlashBeginWrite have been called, and the current
 	address is either the front of a sector or has already been erased.
 
   Parameters:
@@ -443,7 +436,7 @@ void SPIFlashWrite(uint8_t vData)
 	See Remarks in SPIFlashBeginWrite for important information about Flash
 	memory parts.
   ***************************************************************************/
-void SPIFlashWriteArray(uint8_t* vData, uint16_t wLen)
+void sst25_flash_writeArray(uint8_t* vData, uint16_t wLen)
 {
 	volatile uint8_t Dummy;
 	bool isStarted;
@@ -457,7 +450,7 @@ void SPIFlashWriteArray(uint8_t* vData, uint16_t wLen)
 	// If starting at an odd address, write a single byte
 	if((dwWriteAddr & 0x01) && wLen)
 	{
-		SPIFlashWrite(*vData);
+		sst25_flash_write(*vData);
 		vData++;
 		wLen--;
 	}
@@ -496,7 +489,7 @@ void SPIFlashWriteArray(uint8_t* vData, uint16_t wLen)
 				// a time.  This is implemented this way only because I don't 
 				// have an SST25VF064C handy to test with right now. -HS
 				while(wLen--)
-					SPIFlashWrite(*vData++);
+					sst25_flash_write(*vData++);
 				return;
 			}
 
@@ -556,7 +549,7 @@ void SPIFlashWriteArray(uint8_t* vData, uint16_t wLen)
 
 	// If a byte remains, write the odd address
 	if(wLen)
-		SPIFlashWrite(*vData);
+		sst25_flash_write(*vData);
 }
 
 
@@ -569,11 +562,11 @@ void SPIFlashWriteArray(uint8_t* vData, uint16_t wLen)
 
   Description:
 	This function erases a sector in the Flash part.  It is called
-	internally by the SPIFlashWrite functions whenever a write is attempted
+	internally by the sst25_flash_write functions whenever a write is attempted
 	on the first byte in a sector.
 
   Precondition:
-	SPIFlashInit has been called.
+	sst25_flash_init has been called.
 
   Parameters:
 	dwAddr - The address of the sector to be erased.
@@ -630,7 +623,7 @@ void SPIFlashEraseSector(uint32_t dwAddr)
 	transmitted.
 
   Precondition:
-	SPIFlashInit has been called.
+	sst25_flash_init has been called.
 
   Parameters:
 	cmd - The single-byte command code to send
@@ -659,7 +652,7 @@ void sst25_send_byte_command(uint8_t cmd)
 	used in the programming functions to wait for operations to complete.
 
   Precondition:
-	SPIFlashInit has been called.
+	sst25_flash_init has been called.
 
   Parameters:
 	None
@@ -703,7 +696,7 @@ static void _WaitWhileBusy(void)
 	see the result.
 
   Precondition:
-	SPIFlashInit has been called.
+	sst25_flash_init has been called.
 
   Parameters:
 	None

@@ -128,7 +128,7 @@ int main(void)
 	sensor_interf.write = spi_transfer_bme280;
 	sensor_interf.delay_ms = timer_delay_ms;
 
-	SPIFlashInit();
+	sst25_flash_init();
 	uart_send_string("testing memory read:");
 	uart_newline();
 	sst25_read_array(0x00000000,pu8dreturnata,2);
