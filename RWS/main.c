@@ -16,6 +16,7 @@
 #include "spi_handler.h"
 #include "uart_handler.h"
 #include "bme280/bme280.h"
+#include "sst25/sst25_flash_handler.h"
 
 #define INIT_STATUS_LED		(STATUS_LED_DDR |= (1 << STATUS_LED_PIN))
 #define TOGGLE_STATUS_LED	(STATUS_LED_PORT ^= (1 << STATUS_LED_PIN))
@@ -125,7 +126,11 @@ int main(void)
 	sensor_interf.write = spi_transfer_bme280;
 	sensor_interf.delay_ms = timer_delay_ms;
 
+	SPIFlashInit();
+
 	rslt = bme280_init(&sensor_interf);
+	
+
 	
 	#ifdef OUTPUT_LOG
 	uart_send_string("BME280 sensor initialized with state: ");

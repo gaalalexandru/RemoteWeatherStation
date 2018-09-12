@@ -135,9 +135,6 @@
     <Compile Include="configuration.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="flash_memory_map.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="main.c">
       <SubType>compile</SubType>
     </Compile>
@@ -147,10 +144,13 @@
     <Compile Include="spi_handler.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="sst25\SPIFlash.c">
+    <Compile Include="sst25\sst25_flash_map.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="sst25\SPIFlash.h">
+    <Compile Include="sst25\sst25_flash_handler.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="sst25\sst25_flash_handler.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="timer_handler.c">

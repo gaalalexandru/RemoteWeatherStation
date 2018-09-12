@@ -11,9 +11,7 @@
 #include "configuration.h"
 #include "spi_handler.h"
 
-#define INIT_CS_PIN(x,y)	(x) |=  (1<<(y))
-#define SET_CS_PIN(x,y)	(x) |=(1<<(y))
-#define CLEAR_CS_PIN(x,y)	(x) &= ~(1<<(y))
+
 
 typedef enum {
 	bme280 = 0,

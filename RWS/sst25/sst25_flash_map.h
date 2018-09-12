@@ -1,13 +1,13 @@
 /*
- * flash_memory_map.h
+ * sst25_flash_map.h
  *
  * Created: 9/11/2018 4:26:43 PM
  *  Author: alexandru.gaal
  */ 
 
 
-#ifndef FLASH_MEMORY_MAP_H_
-#define FLASH_MEMORY_MAP_H_
+#ifndef SST25_FLASH_MEMORY_MAP_H_
+#define SST25_FLASH_MEMORY_MAP_H_
 
 #define SECTOR_0_START_ADDR		(0X000000)
 #define SECTOR_1_START_ADDR		(0X001000)
@@ -128,4 +128,4 @@
 #define MINUTE_58_REL_START_ADDR	(0x000E80)
 #define MINUTE_59_REL_START_ADDR	(0x000EC0)
 
-#endif /* FLASH_MEMORY_MAP_H_ */
+#endif /* SST25_FLASH_MEMORY_MAP_H_ */
