@@ -51,6 +51,8 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  * E. Wood              		3/20/08 Original
  * Dave Collier/H. Schlunder	6/09/10	Update for SST25VF010A
+ * Alexandru Gaal				9/12/18 Renamed and removed adaptations 
+                                        for PIC controllers
 ********************************************************************/
 #include <stdint.h>
 #include <stdbool.h>
@@ -109,7 +111,6 @@ static union
 } deviceCaps;
 
 
-static void _SendCmd(uint8_t cmd);
 static void _WaitWhileBusy(void);
 //static void _GetStatus(void);
 
@@ -141,12 +142,10 @@ void SPIFlashInit(void)
 {
 	volatile uint8_t u8SerialReturnData = 0;
 
-	DISABLE_CS_FLASH;
-	
-	// Read Device ID code to determine supported device capabilities/instructions
 	// Activate chip select
 	ENABLE_CS_FLASH;
 	
+	// Read Device ID code to determine supported device capabilities/instructions
 	// Send instruction
 	spi_transfer(RDID);
 	// Send 3 byte address (0x000000), returned value of spi_transfer is not important now
@@ -186,7 +185,6 @@ void SPIFlashInit(void)
 		case 0x4B:	// SST25VF064C		(64 Mbit)	0x02, 1.5ms/256 byte page, no AAI
 			deviceCaps.bits.bPageProgram = 1;
 			break;
-	
 		//case 0x01:	// SST25WF512		(512 Kbit)	0xAD, 50us, AAI Word
 		//case 0x02:	// SST25WF010		(1 Mbit)	0xAD, 50us, AAI Word
 		//case 0x03:	// SST25WF020		(2 Mbit)	0xAD, 50us, AAI Word
@@ -203,34 +201,25 @@ void SPIFlashInit(void)
 			deviceCaps.bits.bWriteWordStream = 1;
 	}
 
-#if 0
-
 	// Clear any pre-existing AAI write mode
-	// This may occur if the PIC is reset during a write, but the Flash is
+	// This may occur if the MCU is reset during a write, but the Flash is
 	// not tied to the same hardware reset.
-	_SendCmd(WRDI);
+	sst25_send_byte_command(WRDI);
 
 	// Execute Enable-Write-Status-Register (EWSR) instruction
-	_SendCmd(EWSR);
+	sst25_send_byte_command(EWSR);
 
 	// Clear Write-Protect on all memory locations
 	ENABLE_CS_FLASH;
-	
 	spi_transfer(WRSR);
-	Dummy = spi_transfer(Dummy);
-	
 	spi_transfer(0x00); // Clear all block protect bits
-	Dummy = spi_transfer(Dummy);
-	
 	DISABLE_CS_FLASH;
-	
-#endif
 }
 
 
 /*****************************************************************************
   Function:
-	void SPIFlashReadArray(uint32_t dwAddress, uint8_t *vData, uint16_t wLength)
+	void sst25_read_array(uint32_t u32address, uint8_t *pu8data, uint16_t u16len)
 
   Description:
 	Reads an array of bytes from the SPI Flash module.
@@ -247,39 +236,73 @@ void SPIFlashInit(void)
   Returns:
 	None
   ***************************************************************************/
-void SPIFlashReadArray(uint32_t dwAddress, uint8_t *vData, uint16_t wLength)
+void sst25_read_array(uint32_t u32address, uint8_t *pu8data, uint16_t u16len)
+					 //(uint32_t dwAddress, uint8_t *vData, uint16_t wLength)
 {
 	volatile uint8_t Dummy;
 
 	// Ignore operations when the destination is NULL or nothing to read
-	if(vData == NULL || wLength == 0)
+	if(pu8data == NULL || u16len == 0) 
+	{
+		uart_send_string("error");
+		uart_newline();
 		return;
+	}
 
-	// Activate chip select
 	ENABLE_CS_FLASH;
+
+	#if SST25_LOG_ACTIV
+	uart_send_string("Address split into bytes: ");
+	uart_newline();
+	//uart_send_char(((uint8_t*)&u32address)[2]);
+	uart_send_char((uint8_t)((u32address>>16)&(0xFF)));
+	uart_newline();
+	//uart_send_char(((uint8_t*)&u32address)[1]);
+	uart_send_char((uint8_t)((u32address>>8)&(0xFF)));
+	uart_newline();
+	//uart_send_char(((uint8_t*)&u32address)[0]);
+	uart_send_char((uint8_t)(u32address&0xFF));
+	uart_newline();
+	#endif  //SST25_LOG_ACTIV
 
 	// Send READ opcode
 	spi_transfer(READ);
-	Dummy = spi_transfer(Dummy);
+	//Dummy = spi_transfer(Dummy);
 
 	// Send address
-	spi_transfer(((uint8_t*)&dwAddress)[2]);
-	Dummy = spi_transfer(Dummy);
+	//spi_transfer(((uint8_t*)&u32address)[2]);
+	spi_transfer(0x00);
+	spi_transfer(0x00);
+	spi_transfer(0x00);
+	//Dummy = spi_transfer(Dummy);
+	
+	//spi_transfer(((uint8_t*)&u32address)[1]);
+	//Dummy = spi_transfer(Dummy);
 
-	spi_transfer(((uint8_t*)&dwAddress)[1]);
-	Dummy = spi_transfer(Dummy);
-
-	spi_transfer(((uint8_t*)&dwAddress)[0]);
-	Dummy = spi_transfer(Dummy);
+	//spi_transfer(((uint8_t*)&u32address)[0]);
+	//Dummy = spi_transfer(Dummy);
 
 	// Read data
-	while(wLength--)
+	while(u16len--)
 	{
-		spi_transfer(0);
-		*vData++ = spi_transfer(0);
+		//spi_transfer(0xFF);
+		*pu8data = spi_transfer(0x00);
+		uart_send_string("reading....");
+		uart_send_char(*pu8data);
+		*pu8data++;
+		uart_newline();
 	}
-
-	// Deactivate chip select
+	
+	#if SST25_LOG_ACTIV
+	uart_send_string("Read bytes from memory: ");
+	//uart_send_string(pu8data);
+	while(*pu8data){
+		uart_send_char(*pu8data);
+		pu8data++;
+	}
+	uart_newline();
+	#endif  //SST25_LOG_ACTIV
+	
 	DISABLE_CS_FLASH;
 }
 
@@ -362,7 +385,7 @@ void SPIFlashWrite(uint8_t vData)
 		SPIFlashEraseSector(dwWriteAddr);
 
 	// Enable writing
-	_SendCmd(WREN);
+	sst25_send_byte_command(WREN);
 
 	// Activate the chip select
 	ENABLE_CS_FLASH;
@@ -458,7 +481,7 @@ void SPIFlashWriteArray(uint8_t* vData, uint16_t wLen)
 		if(!isStarted)
 		{
 			// Enable writing
-			_SendCmd(WREN);
+			sst25_send_byte_command(WREN);
 
 			// Select appropriate programming opcode.  The WRITE_WORD_STREAM 
 			// mode is the default if neither of these flags are set.
@@ -522,14 +545,14 @@ void SPIFlashWriteArray(uint8_t* vData, uint16_t wLen)
 		if((dwWriteAddr & SPI_FLASH_SECTOR_MASK) == 0)
 		{
 			_WaitWhileBusy();
-			_SendCmd(WRDI);
+			sst25_send_byte_command(WRDI);
 			isStarted = false;
 		}
 	}
 
 	// Wait for write to complete, then exit AAI mode
 	_WaitWhileBusy();
-	_SendCmd(WRDI);
+	sst25_send_byte_command(WRDI);
 
 	// If a byte remains, write the odd address
 	if(wLen)
@@ -567,7 +590,7 @@ void SPIFlashEraseSector(uint32_t dwAddr)
 	volatile uint8_t Dummy;
 
 	// Enable writing
-	_SendCmd(WREN);
+	sst25_send_byte_command(WREN);
 
 	// Activate the chip select
 	ENABLE_CS_FLASH;
@@ -595,7 +618,7 @@ void SPIFlashEraseSector(uint32_t dwAddr)
 
 /*****************************************************************************
   Function:
-	static void _SendCmd(uint8_t cmd)
+	void sst25_send_byte_command(uint8_t cmd)
 
   Summary:
 	Sends a single-byte command to the SPI Flash part.
@@ -615,17 +638,11 @@ void SPIFlashEraseSector(uint32_t dwAddr)
   Returns:
 	None
   ***************************************************************************/
-static void _SendCmd(uint8_t cmd)
+void sst25_send_byte_command(uint8_t cmd)
 {
-	uint8_t dummy  = 0xFF;
-	// Activate chip select
+	uint8_t u8SerialData  = cmd;
 	ENABLE_CS_FLASH;
-
-	// Send instruction
-	spi_transfer(cmd);
-	cmd = spi_transfer(dummy);
-
-	// Deactivate chip select
+	spi_transfer(u8SerialData); // Send instruction, ignore the return
 	DISABLE_CS_FLASH;
 }
 

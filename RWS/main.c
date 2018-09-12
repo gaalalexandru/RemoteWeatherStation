@@ -106,6 +106,8 @@ int8_t setup_measurement_normal_mode(struct bme280_dev *dev)
 
 int main(void)
 {
+	uint8_t *pu8dreturnata = "";
+	
 	struct bme280_data comp_data;
 	INIT_STATUS_LED;
 	
@@ -127,6 +129,15 @@ int main(void)
 	sensor_interf.delay_ms = timer_delay_ms;
 
 	SPIFlashInit();
+	uart_send_string("testing memory read:");
+	uart_newline();
+	sst25_read_array(0x00000000,pu8dreturnata,2);
+	uart_send_string("read data: ");
+	while(*pu8dreturnata){
+		uart_send_char(*pu8dreturnata);
+		pu8dreturnata++;
+	}
+	uart_newline();	
 
 	rslt = bme280_init(&sensor_interf);
 	

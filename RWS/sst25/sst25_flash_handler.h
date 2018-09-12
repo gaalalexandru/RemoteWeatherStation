@@ -60,11 +60,12 @@
 #define SPI_FLASH_SECTOR_MASK		(SPI_FLASH_SECTOR_SIZE - 1)
 
 void SPIFlashInit(void);		
-void SPIFlashReadArray(uint32_t dwAddress, uint8_t *vData, uint16_t wLen);
-void SPIFlashBeginWrite(uint32_t dwAddr);
-void SPIFlashWrite(uint8_t vData);
-void SPIFlashWriteArray(uint8_t *vData, uint16_t wLen);
-void SPIFlashEraseSector(uint32_t dwAddr);
+void sst25_read_array(uint32_t u32address, uint8_t *pu8data, uint16_t u16len);
+void SPIFlashBeginWrite(uint32_t u32address);
+void SPIFlashWrite(uint8_t u8data);
+void SPIFlashWriteArray(uint8_t *pu8data, uint16_t u16len);
+void SPIFlashEraseSector(uint32_t u32address);
 
+void sst25_send_byte_command(uint8_t cmd);
 
 #endif
