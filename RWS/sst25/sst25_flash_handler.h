@@ -50,6 +50,12 @@
  * Author               Date    Comment
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  * E. Wood				3/20/08	Original
+ * Alexandru Gaal		9/12/18 Removed adaptations for PIC MCU
+								Renamed functions and variables
+								to be in accordance with
+								Barr C Coding standard 2018
+								Added chip erase function
+								Removed dependencies with MCUs
 ********************************************************************/
 #ifndef __SPIFLASH_H
 #define __SPIFLASH_H
@@ -65,6 +71,7 @@ void sst25_begin_write(uint32_t u32Addr);
 void sst25_write(uint8_t u8data);
 void sst25_write_array(uint8_t *pu8data, uint16_t u16len);
 void sst25_erase_sector(uint32_t u32address);
+void sst25_erase_chip(void);
 void sst25_send_byte_command(uint8_t u8cmd);
 
 #endif

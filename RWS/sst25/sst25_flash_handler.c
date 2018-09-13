@@ -51,8 +51,12 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  * E. Wood              		3/20/08 Original
  * Dave Collier/H. Schlunder	6/09/10	Update for SST25VF010A
- * Alexandru Gaal				9/12/18 Renamed and removed adaptations 
-                                        for PIC controllers
+ * Alexandru Gaal				9/12/18 Removed adaptations for PIC MCU
+										Renamed functions and variables
+										to be in accordance with 
+										Barr C Coding standard 2018
+										Added chip erase function
+										Removed dependencies with MCUs
 ********************************************************************/
 #include <stdint.h>
 #include <stdbool.h>
@@ -111,7 +115,7 @@ static union
 } deviceCaps;
 
 
-static void _WaitWhileBusy(void);
+static void wait_while_busy(void);
 //static void _GetStatus(void);
 
 
@@ -372,7 +376,7 @@ void sst25_write(uint8_t u8data)
 	g_u32WriteAddr++;  // Move to next address
 	DISABLE_CS_FLASH;
 	
-	_WaitWhileBusy();
+	wait_while_busy();
 	
 	#if SST25_LOG_ACTIV
 	uart_send_string("...writing finished");
@@ -412,7 +416,6 @@ void sst25_write(uint8_t u8data)
   ***************************************************************************/
 void sst25_write_array(uint8_t* u8data, uint16_t u16len)
 {
-	volatile uint8_t Dummy;
 	bool isStarted;
 	uint8_t vOpcode;
 	uint8_t i;
@@ -434,21 +437,20 @@ void sst25_write_array(uint8_t* u8data, uint16_t u16len)
 
 	isStarted = false;
 
-	// Loop over all remaining WORDs
+	// Loop over all remaining unsent data
 	while(u16len > 1)
 	{
 		// Don't do anything until chip is ready
-		_WaitWhileBusy();
+		wait_while_busy();
 
 		// If address is a sector boundary
 		if((g_u32WriteAddr & SPI_FLASH_SECTOR_MASK) == 0)
 			sst25_erase_sector(g_u32WriteAddr);
 
 		// If not yet started, initiate AAI mode
-		if(!isStarted)
+		if(!isStarted) //AAI write is NOT Started
 		{
-			// Enable writing
-			sst25_send_byte_command(WREN);
+			sst25_send_byte_command(WREN); // Enable writing
 
 			// Select appropriate programming opcode.  The WRITE_WORD_STREAM 
 			// mode is the default if neither of these flags are set.
@@ -466,59 +468,44 @@ void sst25_write_array(uint8_t* u8data, uint16_t u16len)
 					sst25_write(*u8data++);
 				return;
 			}
-
-			// Activate the chip select
 			ENABLE_CS_FLASH;
 
 			// Issue WRITE_xxx_STREAM command with address
-			spi_transfer(vOpcode);
-			//Dummy = spi_transfer(Dummy);
-
+			spi_transfer(vOpcode); //0xAF for SST25VF01A
 			spi_transfer(((uint8_t*)&g_u32WriteAddr)[2]);
-			//Dummy = spi_transfer(Dummy);
-
 			spi_transfer(((uint8_t*)&g_u32WriteAddr)[1]);
-			//Dummy = spi_transfer(Dummy);
-
 			spi_transfer(((uint8_t*)&g_u32WriteAddr)[0]);
-			//Dummy = spi_transfer(Dummy);
-
 			isStarted = true;
 		}
 		// Otherwise, just write the AAI command again
-		else
+		else  //AAI write isStarted
 		{
-			// Assert the chip select pin
-			ENABLE_CS_FLASH;
-
+			ENABLE_CS_FLASH;  // Assert the chip select pin
 			// Issue the WRITE_STREAM command for continuation
 			spi_transfer(vOpcode);
-			Dummy = spi_transfer(Dummy);
 		}
 
-		// Write a byte or two
+		// Write a byte or two depending on device AAI write capabilities
+		// for SST25VF01A just write 1 byte at a time
 		for(i = 0; i <= deviceCaps.bits.bWriteWordStream; i++)
 		{
 			spi_transfer(*u8data++);		
 			g_u32WriteAddr++;
 			u16len--;
-			Dummy = spi_transfer(Dummy);
 		}
-
-		// Release the chip select to begin the write
 		DISABLE_CS_FLASH;
 
 		// If a boundary was reached, end the write
 		if((g_u32WriteAddr & SPI_FLASH_SECTOR_MASK) == 0)
 		{
-			_WaitWhileBusy();
+			wait_while_busy();
 			sst25_send_byte_command(WRDI);
 			isStarted = false;
 		}
 	}
 
 	// Wait for write to complete, then exit AAI mode
-	_WaitWhileBusy();
+	wait_while_busy();
 	sst25_send_byte_command(WRDI);
 
 	// If a byte remains, write the odd address
@@ -549,39 +536,57 @@ void sst25_write_array(uint8_t* u8data, uint16_t u16len)
 	None
 
   Remarks:
-	See Remarks in SPIFlashBeginWrite for important information about Flash
+	See Remarks in sst25_begin_write for important information about Flash
 	memory parts.
   ***************************************************************************/
 void sst25_erase_sector(uint32_t u32address)
 {
-	//volatile uint8_t Dummy;
-
-	// Enable writing
-	sst25_send_byte_command(WREN);
-
-	// Activate the chip select
+	sst25_send_byte_command(WREN); // Enable writing
 	ENABLE_CS_FLASH;
-
 	// Issue ERASE command with address
 	spi_transfer(ERASE_4K);
-	//Dummy = spi_transfer(Dummy);
-
 	spi_transfer(((uint8_t*)&u32address)[2]);
-	//Dummy = spi_transfer(Dummy);
-
 	spi_transfer(((uint8_t*)&u32address)[1]);
-	//Dummy = spi_transfer(Dummy);
-
 	spi_transfer(((uint8_t*)&u32address)[0]);
-	//Dummy = spi_transfer(Dummy);
-
-	// Deactivate chip select to perform the erase
 	DISABLE_CS_FLASH;
-
-	// Wait for erase to complete
-	_WaitWhileBusy();
+	wait_while_busy(); // Wait for erase to complete
 }
 
+
+/*****************************************************************************
+  Function:
+	void sst25_erase_chip(void)
+
+  Summary:
+	Erases the complete flash memory.
+
+  Description:
+	This function erases the Flash completely.
+	It can be called from application whenever desired
+
+  Precondition:
+	sst25_flash_init has been called.
+
+  Parameters:
+	None
+
+  Returns:
+	None
+
+  Remarks:
+	See Remarks in sst25_begin_write for important information about Flash
+	memory parts.
+  ***************************************************************************/
+
+void sst25_erase_chip(void)
+{
+	sst25_send_byte_command(WREN); // Enable writing
+	ENABLE_CS_FLASH;
+	// Issue ERASE CHIP command
+	sst25_send_byte_command(ERASE_ALL);
+	DISABLE_CS_FLASH;
+	wait_while_busy();
+}
 
 /*****************************************************************************
   Function:
@@ -616,7 +621,7 @@ void sst25_send_byte_command(uint8_t cmd)
 
 /*****************************************************************************
   Function:
-	static void _WaitWhileBusy(void)
+	static void wait_while_busy(void)
 
   Summary:
 	Waits for the SPI Flash part to indicate it is idle.
@@ -634,18 +639,17 @@ void sst25_send_byte_command(uint8_t cmd)
   Returns:
 	None
   ***************************************************************************/
-static void _WaitWhileBusy(void)
+static void wait_while_busy(void)
 {
-	volatile uint8_t Dummy;
+	volatile uint8_t u8data;
 
 	ENABLE_CS_FLASH;
 	// Send Read Status Register instruction
 	spi_transfer(RDSR);
 	do  // Poll the BUSY bit
 	{
-		Dummy = spi_transfer(0x00);
-		//Dummy = spi_transfer(Dummy);
-	} while(Dummy & BUSY);
+		u8data = spi_transfer(0xFF);
+	} while(u8data & BUSY);
 	DISABLE_CS_FLASH;
 }
 
