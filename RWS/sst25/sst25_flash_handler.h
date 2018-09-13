@@ -64,8 +64,7 @@ void sst25_read_array(uint32_t u32address, uint8_t *pu8data, uint16_t u16len);
 void sst25_begin_write(uint32_t u32Addr);
 void sst25_write(uint8_t u8data);
 void sst25_write_array(uint8_t *pu8data, uint16_t u16len);
-void SPIFlashEraseSector(uint32_t u32address);
-
-void sst25_send_byte_command(uint8_t cmd);
+void sst25_erase_sector(uint32_t u32address);
+void sst25_send_byte_command(uint8_t u8cmd);
 
 #endif

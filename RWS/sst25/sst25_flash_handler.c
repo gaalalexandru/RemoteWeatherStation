@@ -95,7 +95,7 @@
 
 
 // Internal pointer to address being written
-static uint32_t dwWriteAddr;
+static uint32_t g_u32WriteAddr;
 
 // SPI Flash device capabilities
 static union
@@ -239,8 +239,6 @@ void sst25_flash_init(void)
 void sst25_read_array(uint32_t u32address, uint8_t *pu8data, uint16_t u16len)
 					 //(uint32_t dwAddress, uint8_t *vData, uint16_t wLength)
 {
-	volatile uint8_t Dummy;
-
 	// Ignore operations when the destination is NULL or nothing to read
 	if(pu8data == NULL || u16len == 0) 
 	{
@@ -251,28 +249,19 @@ void sst25_read_array(uint32_t u32address, uint8_t *pu8data, uint16_t u16len)
 
 	ENABLE_CS_FLASH;
 
-	#if SST25_LOG_ACTIV
+	#if 0//SST25_LOG_ACTIV
 	uart_send_string("Address split into bytes: ");
 	uart_newline();
 	uart_send_char(((uint8_t*)&u32address)[2]);
-	//uart_send_char((uint8_t)((u32address>>16)&(0xFF)));
 	uart_newline();
 	uart_send_char(((uint8_t*)&u32address)[1]);
-	//uart_send_char((uint8_t)((u32address>>8)&(0xFF)));
 	uart_newline();
 	uart_send_char(((uint8_t*)&u32address)[0]);
-	//uart_send_char((uint8_t)(u32address&0xFF));
 	uart_newline();
 	#endif  //SST25_LOG_ACTIV
 
-	// Send READ opcode
+	// Issue READ command with address
 	spi_transfer(READ);
-	//Dummy = spi_transfer(Dummy);
-
-	// Send address
-	//spi_transfer(0x00);
-	//spi_transfer(0x00);
-	//spi_transfer(0x00);
 	spi_transfer(((uint8_t*)&u32address)[2]);
 	spi_transfer(((uint8_t*)&u32address)[1]);
 	spi_transfer(((uint8_t*)&u32address)[0]);
@@ -280,23 +269,13 @@ void sst25_read_array(uint32_t u32address, uint8_t *pu8data, uint16_t u16len)
 	// Read data
 	while(u16len--)
 	{
-		//spi_transfer(0xFF);
-		*pu8data = spi_transfer(0x00);
-		uart_send_string("reading....");
-		uart_send_char(*pu8data);
-		*pu8data++;
-		uart_newline();
+		*pu8data++ = spi_transfer(0xFF);
+// 		uart_send_string("reading....");
+// 		uart_send_char(*pu8data);
+// 		uart_newline();
 	}
 	
-	#if SST25_LOG_ACTIV
-	uart_send_string("Read bytes from memory: ");
-	//uart_send_string(pu8data);
-	while(*pu8data){
-		uart_send_char(*pu8data);
-		pu8data++;
-	}
-	uart_newline();
-	#endif  //SST25_LOG_ACTIV
+	
 	
 	DISABLE_CS_FLASH;
 }
@@ -337,7 +316,7 @@ void sst25_read_array(uint32_t u32address, uint8_t *pu8data, uint16_t u16len)
   ***************************************************************************/
 void sst25_begin_write(uint32_t u32Addr)
 {
-	dwWriteAddr = dwAddr;
+	g_u32WriteAddr = u32Addr;
 }
 
 /*****************************************************************************
@@ -371,44 +350,39 @@ void sst25_begin_write(uint32_t u32Addr)
   ***************************************************************************/
 void sst25_write(uint8_t u8data)
 {
-	volatile uint8_t Dummy;
-
 	// If address is a boundary, erase a sector first
-	if((dwWriteAddr & SPI_FLASH_SECTOR_MASK) == 0u)
-		SPIFlashEraseSector(dwWriteAddr);
+	if((g_u32WriteAddr & SPI_FLASH_SECTOR_MASK) == 0u)
+	{
+		sst25_erase_sector(g_u32WriteAddr);
+	}
 
-	// Enable writing
 	sst25_send_byte_command(WREN);
-
-	// Activate the chip select
+	
+	#if SST25_LOG_ACTIV
+	uart_send_string("writing started...");
+	uart_newline();
+	#endif //SST25_LOG_ACTIV
+	
 	ENABLE_CS_FLASH;
-
-	// Issue WRITE command with address
-	spi_transfer(WRITE);
-	Dummy = spi_transfer(Dummy);
-
-	spi_transfer(((uint8_t*)&dwWriteAddr)[2]);
-	Dummy = spi_transfer(Dummy);
-
-	spi_transfer(((uint8_t*)&dwWriteAddr)[1]);
-	Dummy = spi_transfer(Dummy);
-
-	spi_transfer(((uint8_t*)&dwWriteAddr)[0]);
-	Dummy = spi_transfer(Dummy);
-
-	// Write the byte
-	spi_transfer(vData);
-	Dummy = spi_transfer(Dummy);
-	dwWriteAddr++;
-
-	// Deactivate chip select and wait for write to complete
+	spi_transfer(WRITE); // Issue WRITE command with address
+	spi_transfer(((uint8_t*)&g_u32WriteAddr)[2]);
+	spi_transfer(((uint8_t*)&g_u32WriteAddr)[1]);
+	spi_transfer(((uint8_t*)&g_u32WriteAddr)[0]);
+	spi_transfer(u8data);  // Write the byte
+	g_u32WriteAddr++;  // Move to next address
 	DISABLE_CS_FLASH;
+	
 	_WaitWhileBusy();
+	
+	#if SST25_LOG_ACTIV
+	uart_send_string("...writing finished");
+	uart_newline();
+	#endif //SST25_LOG_ACTIV
 }
 
 /*****************************************************************************
   Function:
-	void sst25_flash_writeArray(uint8_t* vData, uint16_t wLen)
+	void sst25__write_array(uint8_t* u8data, uint16_t u16len)
 
   Summary:
 	Writes an array of bytes to the SPI Flash part.
@@ -426,8 +400,8 @@ void sst25_write(uint8_t u8data)
 	address is either the front of a sector or has already been erased.
 
   Parameters:
-	vData - The array to write to the next memory location
-	wLen - The length of the data to be written
+	u8data - The array to write to the next memory location
+	u16len - The length of the data to be written
 
   Returns:
 	None
@@ -436,7 +410,7 @@ void sst25_write(uint8_t u8data)
 	See Remarks in SPIFlashBeginWrite for important information about Flash
 	memory parts.
   ***************************************************************************/
-void sst25_flash_writeArray(uint8_t* vData, uint16_t wLen)
+void sst25_write_array(uint8_t* u8data, uint16_t u16len)
 {
 	volatile uint8_t Dummy;
 	bool isStarted;
@@ -444,15 +418,15 @@ void sst25_flash_writeArray(uint8_t* vData, uint16_t wLen)
 	uint8_t i;
 
 	// Do nothing if no data to process
-	if(wLen == 0u)
+	if(u16len == 0u)
 		return;
 
 	// If starting at an odd address, write a single byte
-	if((dwWriteAddr & 0x01) && wLen)
+	if((g_u32WriteAddr & 0x01) && u16len)
 	{
-		sst25_flash_write(*vData);
-		vData++;
-		wLen--;
+		sst25_write(*u8data);
+		u8data++;
+		u16len--;
 	}
 
 	// Assume we are using AAI Word program mode unless changed later
@@ -461,14 +435,14 @@ void sst25_flash_writeArray(uint8_t* vData, uint16_t wLen)
 	isStarted = false;
 
 	// Loop over all remaining WORDs
-	while(wLen > 1)
+	while(u16len > 1)
 	{
 		// Don't do anything until chip is ready
 		_WaitWhileBusy();
 
 		// If address is a sector boundary
-		if((dwWriteAddr & SPI_FLASH_SECTOR_MASK) == 0)
-			SPIFlashEraseSector(dwWriteAddr);
+		if((g_u32WriteAddr & SPI_FLASH_SECTOR_MASK) == 0)
+			sst25_erase_sector(g_u32WriteAddr);
 
 		// If not yet started, initiate AAI mode
 		if(!isStarted)
@@ -488,8 +462,8 @@ void sst25_flash_writeArray(uint8_t* vData, uint16_t wLen)
 				// writing a function to write full pages of up to 256 bytes at 
 				// a time.  This is implemented this way only because I don't 
 				// have an SST25VF064C handy to test with right now. -HS
-				while(wLen--)
-					sst25_flash_write(*vData++);
+				while(u16len--)
+					sst25_write(*u8data++);
 				return;
 			}
 
@@ -498,16 +472,16 @@ void sst25_flash_writeArray(uint8_t* vData, uint16_t wLen)
 
 			// Issue WRITE_xxx_STREAM command with address
 			spi_transfer(vOpcode);
-			Dummy = spi_transfer(Dummy);
+			//Dummy = spi_transfer(Dummy);
 
-			spi_transfer(((uint8_t*)&dwWriteAddr)[2]);
-			Dummy = spi_transfer(Dummy);
+			spi_transfer(((uint8_t*)&g_u32WriteAddr)[2]);
+			//Dummy = spi_transfer(Dummy);
 
-			spi_transfer(((uint8_t*)&dwWriteAddr)[1]);
-			Dummy = spi_transfer(Dummy);
+			spi_transfer(((uint8_t*)&g_u32WriteAddr)[1]);
+			//Dummy = spi_transfer(Dummy);
 
-			spi_transfer(((uint8_t*)&dwWriteAddr)[0]);
-			Dummy = spi_transfer(Dummy);
+			spi_transfer(((uint8_t*)&g_u32WriteAddr)[0]);
+			//Dummy = spi_transfer(Dummy);
 
 			isStarted = true;
 		}
@@ -525,9 +499,9 @@ void sst25_flash_writeArray(uint8_t* vData, uint16_t wLen)
 		// Write a byte or two
 		for(i = 0; i <= deviceCaps.bits.bWriteWordStream; i++)
 		{
-			spi_transfer(*vData++);		
-			dwWriteAddr++;
-			wLen--;
+			spi_transfer(*u8data++);		
+			g_u32WriteAddr++;
+			u16len--;
 			Dummy = spi_transfer(Dummy);
 		}
 
@@ -535,7 +509,7 @@ void sst25_flash_writeArray(uint8_t* vData, uint16_t wLen)
 		DISABLE_CS_FLASH;
 
 		// If a boundary was reached, end the write
-		if((dwWriteAddr & SPI_FLASH_SECTOR_MASK) == 0)
+		if((g_u32WriteAddr & SPI_FLASH_SECTOR_MASK) == 0)
 		{
 			_WaitWhileBusy();
 			sst25_send_byte_command(WRDI);
@@ -548,14 +522,14 @@ void sst25_flash_writeArray(uint8_t* vData, uint16_t wLen)
 	sst25_send_byte_command(WRDI);
 
 	// If a byte remains, write the odd address
-	if(wLen)
-		sst25_flash_write(*vData);
+	if(u16len)
+		sst25_write(*u8data);
 }
 
 
 /*****************************************************************************
   Function:
-	void SPIFlashEraseSector(uint32_t dwAddr)
+	void sst25_erase_sector(uint32_t u32address)
 
   Summary:
 	Erases a sector.
@@ -569,7 +543,7 @@ void sst25_flash_writeArray(uint8_t* vData, uint16_t wLen)
 	sst25_flash_init has been called.
 
   Parameters:
-	dwAddr - The address of the sector to be erased.
+	u32address - The address of the sector to be erased.
 
   Returns:
 	None
@@ -578,9 +552,9 @@ void sst25_flash_writeArray(uint8_t* vData, uint16_t wLen)
 	See Remarks in SPIFlashBeginWrite for important information about Flash
 	memory parts.
   ***************************************************************************/
-void SPIFlashEraseSector(uint32_t dwAddr)
+void sst25_erase_sector(uint32_t u32address)
 {
-	volatile uint8_t Dummy;
+	//volatile uint8_t Dummy;
 
 	// Enable writing
 	sst25_send_byte_command(WREN);
@@ -590,16 +564,16 @@ void SPIFlashEraseSector(uint32_t dwAddr)
 
 	// Issue ERASE command with address
 	spi_transfer(ERASE_4K);
-	Dummy = spi_transfer(Dummy);
+	//Dummy = spi_transfer(Dummy);
 
-	spi_transfer(((uint8_t*)&dwAddr)[2]);
-	Dummy = spi_transfer(Dummy);
+	spi_transfer(((uint8_t*)&u32address)[2]);
+	//Dummy = spi_transfer(Dummy);
 
-	spi_transfer(((uint8_t*)&dwAddr)[1]);
-	Dummy = spi_transfer(Dummy);
+	spi_transfer(((uint8_t*)&u32address)[1]);
+	//Dummy = spi_transfer(Dummy);
 
-	spi_transfer(((uint8_t*)&dwAddr)[0]);
-	Dummy = spi_transfer(Dummy);
+	spi_transfer(((uint8_t*)&u32address)[0]);
+	//Dummy = spi_transfer(Dummy);
 
 	// Deactivate chip select to perform the erase
 	DISABLE_CS_FLASH;
@@ -664,21 +638,14 @@ static void _WaitWhileBusy(void)
 {
 	volatile uint8_t Dummy;
 
-	// Activate chip select
 	ENABLE_CS_FLASH;
-
 	// Send Read Status Register instruction
 	spi_transfer(RDSR);
-	Dummy = spi_transfer(Dummy);
-
-	// Poll the BUSY bit
-	do
+	do  // Poll the BUSY bit
 	{
-		spi_transfer(0x00);
-		Dummy = spi_transfer(Dummy);
+		Dummy = spi_transfer(0x00);
+		//Dummy = spi_transfer(Dummy);
 	} while(Dummy & BUSY);
-
-	// Deactivate chip select
 	DISABLE_CS_FLASH;
 }
 

@@ -17,6 +17,7 @@
 #include "uart_handler.h"
 #include "bme280/bme280.h"
 #include "sst25/sst25_flash_handler.h"
+#include "sst25/sst25_flash_map.h"
 
 #define INIT_STATUS_LED		(STATUS_LED_DDR |= (1 << STATUS_LED_PIN))
 #define TOGGLE_STATUS_LED	(STATUS_LED_PORT ^= (1 << STATUS_LED_PIN))
@@ -106,7 +107,7 @@ int8_t setup_measurement_normal_mode(struct bme280_dev *dev)
 
 int main(void)
 {
-	uint8_t *pu8dreturnata = "";
+	uint8_t pu8dreturnata[5] = {0,0,0,0,0};
 	
 	struct bme280_data comp_data;
 	INIT_STATUS_LED;
@@ -129,20 +130,40 @@ int main(void)
 	sensor_interf.delay_ms = timer_delay_ms;
 
 	sst25_flash_init();
+
+	/*uart_send_string("testing memory write:"); uart_newline();	
+	sst25_begin_write(HOUR_0_ADDR | MINUTE_2_REL_START_ADDR);
+	sst25_write(0x38);
+	sst25_write(0x39);
+	sst25_write(0x40);
+	sst25_write(0x41);
+	uart_send_string("write done"); uart_newline();	*/
+
+	/*
 	uart_send_string("testing memory read:");
 	uart_newline();
-	sst25_read_array(0x00000000,pu8dreturnata,2);
+	sst25_read_array(0x00000000,pu8dreturnata,4);
 	uart_send_string("read data: ");
-	while(*pu8dreturnata){
-		uart_send_char(*pu8dreturnata);
-		pu8dreturnata++;
-	}
-	uart_newline();	
+	uart_send_string(pu8dreturnata);
+	uart_newline();
 
+	uart_send_string("testing memory read:");
+	uart_newline();
+	sst25_read_array(HOUR_0_ADDR | MINUTE_1_REL_START_ADDR,pu8dreturnata,4);
+	uart_send_string("read data: ");
+	uart_send_string(pu8dreturnata);
+	uart_newline();
+	*/
+	
+	uart_send_string("testing memory read:");
+	uart_newline();
+	sst25_read_array(HOUR_0_ADDR | MINUTE_2_REL_START_ADDR,pu8dreturnata,4);
+	uart_send_string("read data: ");
+	uart_send_string(pu8dreturnata);
+	uart_newline();
+	
 	rslt = bme280_init(&sensor_interf);
-	
-
-	
+		
 	#ifdef OUTPUT_LOG
 	uart_send_string("BME280 sensor initialized with state: ");
 	uart_send_char(0x35+rslt);
