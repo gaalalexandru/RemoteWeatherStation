@@ -139,24 +139,26 @@ int main(void)
 	sst25_write(0x41);
 	uart_send_string("write done"); uart_newline();	*/
 
-	uart_send_string("testing memory read 1:");
+	//sst25_erase_chip();
+	
+	/*uart_send_string("testing memory read 1:");
 	uart_newline();
 	sst25_read_array(HOUR_0_ADDR | MINUTE_2_REL_START_ADDR,pu8dreturnata,4);
 	uart_send_string("read data 1: ");
 	uart_send_string(pu8dreturnata);
-	uart_newline();
+	uart_newline();*/
 
-	uart_send_string("testing memory array write:"); uart_newline();	
+	/*uart_send_string("testing memory array write:"); uart_newline();	
 	sst25_begin_write(HOUR_1_ADDR | MINUTE_0_REL_START_ADDR);
 	sst25_write_array(pu8dreturnata,4);
-	uart_send_string("write done"); uart_newline();
+	uart_send_string("write done"); uart_newline();*/
 
-	uart_send_string("testing memory read 2:");
+	/*uart_send_string("testing memory read 2:");
 	uart_newline();
 	sst25_read_array(HOUR_1_ADDR | MINUTE_0_REL_START_ADDR,pu8dreturnata,4);
 	uart_send_string("read data 2: ");
 	uart_send_string(pu8dreturnata);
-	uart_newline();
+	uart_newline();*/
 
 	/*
 	uart_send_string("testing memory read:");
