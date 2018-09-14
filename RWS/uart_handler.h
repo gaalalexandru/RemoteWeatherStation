@@ -83,6 +83,14 @@ void uart_send_string(char *pt);
 // Variable format 1-10 digits with no space before or after
 void uart_send_udec(uint32_t n);
 
+
+//-----------------------uart_send_dec-----------------------
+// Output a 32-bit number in signed decimal format
+// Input: 32-bit number to be transferred
+// Output: none
+// Variable format 1-10 digits with no space before or after
+void uart_send_dec(int32_t n);
+
 //--------------------------uart_send_uhex----------------------------
 // Output a 32-bit number in unsigned hexadecimal format
 // Input: 32-bit number to be transferred

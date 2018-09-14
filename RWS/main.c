@@ -46,6 +46,25 @@ void print_sensor_data(struct bme280_data *comp_data)
 	#endif
 }
 
+void print_sensor_raw_data(struct bme280_uncomp_data *comp_data)
+{
+	#ifdef BME280_FLOAT_ENABLE
+	//printf("%0.2f, %0.2f, %0.2f\r\n",comp_data->temperature, comp_data->pressure, comp_data->humidity);
+	#else
+	#ifdef OUTPUT_LOG
+	uart_send_string("RAW Temperature: ");	uart_send_udec(comp_data->temperature);	uart_newline();
+	uart_send_string("RAW Pressure: ");	uart_send_udec(comp_data->pressure);uart_newline();
+	uart_send_string("RAW Humidity: ");	uart_send_udec(comp_data->humidity);uart_newline();
+	#endif // OUTPUT_LOG
+	#endif
+}
+
+/*test*/
+
+
+
+
+/*test*/
 
 #if WEATHER_MONITORING
 int8_t setup_measurement_weather_monitoring(struct bme280_dev *dev)
@@ -110,6 +129,8 @@ int main(void)
 	uint8_t pu8dreturnata[5] = {0,0,0,0,0};
 	
 	struct bme280_data comp_data;
+	struct bme280_uncomp_data uncomp_data;
+	
 	INIT_STATUS_LED;
 	
 	cli();  //Disable interrupts
@@ -129,6 +150,17 @@ int main(void)
 	sensor_interf.write = spi_transfer_bme280;
 	sensor_interf.delay_ms = timer_delay_ms;
 
+	/*
+	uart_send_string("testing send signed decimal"); uart_newline();	
+	uart_send_dec(-20);			   uart_newline();
+	uart_send_dec(-12520);		   uart_newline();
+	uart_send_dec(-1);			   uart_newline();
+	uart_send_dec(143);			   uart_newline();
+	uart_send_dec(0);			   uart_newline();
+	uart_send_dec(2);			   uart_newline();
+	uart_send_dec(12520);		   uart_newline();
+	*/
+	
 	sst25_flash_init();
 
 	/*uart_send_string("testing memory write:"); uart_newline();	
@@ -184,6 +216,30 @@ int main(void)
 	uart_send_string("BME280 sensor initialized with state: ");
 	uart_send_char(0x35+rslt);
 	uart_newline();
+
+	uart_send_string("BME280 sensor calibration data: ");
+	uart_send_string("dig_T1 = "); uart_send_dec(sensor_interf.calib_data.dig_T1); uart_newline();
+	uart_send_string("dig_T2 = "); uart_send_dec(sensor_interf.calib_data.dig_T2); uart_newline();
+	uart_send_string("dig_T3 = "); uart_send_dec(sensor_interf.calib_data.dig_T3); uart_newline();
+	uart_send_string("dig_P1 = "); uart_send_dec(sensor_interf.calib_data.dig_P1); uart_newline();
+	uart_send_string("dig_P2 = "); uart_send_dec(sensor_interf.calib_data.dig_P2); uart_newline();
+	uart_send_string("dig_P3 = "); uart_send_dec(sensor_interf.calib_data.dig_P3); uart_newline();
+	uart_send_string("dig_P4 = "); uart_send_dec(sensor_interf.calib_data.dig_P4); uart_newline();
+	uart_send_string("dig_P5 = "); uart_send_dec(sensor_interf.calib_data.dig_P5); uart_newline();
+	uart_send_string("dig_P6 = "); uart_send_dec(sensor_interf.calib_data.dig_P6); uart_newline();
+	uart_send_string("dig_P7 = "); uart_send_dec(sensor_interf.calib_data.dig_P7); uart_newline();
+	uart_send_string("dig_P8 = "); uart_send_dec(sensor_interf.calib_data.dig_P8); uart_newline();
+	uart_send_string("dig_P9 = "); uart_send_dec(sensor_interf.calib_data.dig_P9); uart_newline();
+	uart_send_string("dig_H1 = "); uart_send_dec(sensor_interf.calib_data.dig_H1); uart_newline();
+	uart_send_string("dig_H2 = "); uart_send_dec(sensor_interf.calib_data.dig_H2); uart_newline();
+	uart_send_string("dig_H3 = "); uart_send_dec(sensor_interf.calib_data.dig_H3); uart_newline();
+	uart_send_string("dig_H4 = "); uart_send_dec(sensor_interf.calib_data.dig_H4); uart_newline();
+	uart_send_string("dig_H5 = "); uart_send_dec(sensor_interf.calib_data.dig_H5); uart_newline();
+	uart_send_string("dig_H6 = "); uart_send_dec(sensor_interf.calib_data.dig_H6); uart_newline();
+	uart_send_string("t_fine = "); uart_send_dec(sensor_interf.calib_data.t_fine); uart_newline();
+															
+	uart_newline();	
+	
 	#endif  //OUTPUT_LOG
 	
 	#if WEATHER_MONITORING
@@ -198,16 +254,20 @@ int main(void)
 		TOGGLE_STATUS_LED;
 
 		#if WEATHER_MONITORING
-		timer_delay_ms(6000);
-		rslt = bme280_set_sensor_mode(BME280_FORCED_MODE, &sensor_interf);  //trigger forced measurement
-		sensor_interf.delay_ms(40);  //delay needed for measurement to complete
-		#ifdef OUTPUT_LOG
-		uart_send_string("BME280 sensor force mode trigger with state: ");uart_send_char(0x35+rslt);uart_newline();
-		#endif  //OUTPUT_LOG
+			timer_delay_ms(6000);
+			rslt = bme280_set_sensor_mode(BME280_FORCED_MODE, &sensor_interf);  //trigger forced measurement
+			sensor_interf.delay_ms(40);  //delay needed for measurement to complete
+			#ifdef OUTPUT_LOG
+			uart_send_string("BME280 sensor force mode trigger with state: ");uart_send_char(0x35+rslt);uart_newline();
+			#endif  //OUTPUT_LOG
 		#else
-		timer_delay_ms(1000);
+			timer_delay_ms(1000);
 		#endif  //WEATHER_MONITORING
 		
+		
+		rslt = bme280_get_raw_sensor_data(BME280_ALL, &uncomp_data, &sensor_interf);
+		print_sensor_raw_data(&uncomp_data);
+				
 		rslt = bme280_get_sensor_data(BME280_ALL, &comp_data, &sensor_interf);
 		print_sensor_data(&comp_data);
 		#ifdef OUTPUT_LOG

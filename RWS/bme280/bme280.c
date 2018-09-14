@@ -1271,3 +1271,36 @@ static int8_t null_ptr_check(const struct bme280_dev *dev)
 
 	return rslt;
 }
+
+
+/************************************************************************/
+/*   Additional functions to interface static functions to RWS project  */
+/*   Gaal Alexandru 14/09/2018											*/
+/************************************************************************/
+
+int8_t bme280_get_raw_sensor_data(uint8_t sensor_comp, struct bme280_uncomp_data *uncomp_data , struct bme280_dev *dev)
+{
+	int8_t rslt;
+	/* Array to store the pressure, temperature and humidity data read from
+	the sensor */
+	uint8_t reg_data[BME280_P_T_H_DATA_LEN] = {0};
+
+	/* Check for null pointer in the device structure*/
+	rslt = null_ptr_check(dev);
+
+	if ((rslt == BME280_OK) && (uncomp_data != NULL)) {
+		/* Read the pressure and temperature data from the sensor */
+		rslt = bme280_get_regs(BME280_DATA_ADDR, reg_data, BME280_P_T_H_DATA_LEN, dev);
+
+		if (rslt == BME280_OK) {
+			/* Parse the read data from the sensor */
+			bme280_parse_sensor_data(reg_data, uncomp_data);
+			/* Compensate the pressure and/or temperature and/or
+			   humidity data from the sensor */
+		}
+	} else {
+		rslt = BME280_E_NULL_PTR;
+	}
+
+	return rslt;
+}

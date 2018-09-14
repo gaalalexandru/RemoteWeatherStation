@@ -120,6 +120,24 @@ void uart_send_udec(uint32_t n)
 	}
 	uart_send_char(n+'0'); //n is between 0 and 9
 }
+
+void uart_send_dec(int32_t n)
+{
+	// This function uses recursion to convert decimal number
+	//   of unspecified length as an ASCII string
+	if(n < 0) {
+		uart_send_char('-');
+		n = n * (-1);
+	}
+	
+	if(n >= 10){
+		uart_send_dec(n/10);
+		n = n%10;
+	}
+	uart_send_char(n+'0'); //n is between 0 and 9
+}
+
+
 #endif  //USE_UART_DEC_OUTPUT
 
 #ifdef USE_UART_HEX_OUTPUT
