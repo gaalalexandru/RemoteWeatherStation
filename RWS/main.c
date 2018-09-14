@@ -31,7 +31,7 @@
 struct bme280_dev sensor_interf;
 int8_t rslt = BME280_OK;
 
-#define OUTPUT_LOG
+//#define OUTPUT_LOG 
 
 void print_sensor_data(struct bme280_data *comp_data)
 {
@@ -134,22 +134,23 @@ int main(void)
 	INIT_STATUS_LED;
 	
 	cli();  //Disable interrupts
-	timer2_init(); //global timer init
 	uart_init(MYUBRR);
+	timer2_init(); //global timer init
 	spi_init();
 	sei();  // enable global interrupts
 	
-	#ifdef OUTPUT_LOG
+
 	uart_send_string("Timer, UART & SPI Drivers initialized");	uart_newline();
-	#endif  //OUTPUT_LOG
+
 	
 	/* Sensor_0 interface over SPI with native chip select line */
+	/*
 	sensor_interf.dev_id = 0;
 	sensor_interf.intf = BME280_SPI_INTF;
 	sensor_interf.read = spi_transfer_bme280;
 	sensor_interf.write = spi_transfer_bme280;
 	sensor_interf.delay_ms = timer_delay_ms;
-
+*/
 	/*
 	uart_send_string("testing send signed decimal"); uart_newline();	
 	uart_send_dec(-20);			   uart_newline();
@@ -161,7 +162,7 @@ int main(void)
 	uart_send_dec(12520);		   uart_newline();
 	*/
 	
-	sst25_flash_init();
+	//sst25_flash_init();
 
 	/*uart_send_string("testing memory write:"); uart_newline();	
 	sst25_begin_write(HOUR_0_ADDR | MINUTE_2_REL_START_ADDR);
@@ -210,14 +211,14 @@ int main(void)
 	
 
 	
-	rslt = bme280_init(&sensor_interf);
+	//rslt = bme280_init(&sensor_interf);
 		
 	#ifdef OUTPUT_LOG
 	uart_send_string("BME280 sensor initialized with state: ");
 	uart_send_char(0x35+rslt);
 	uart_newline();
 
-	uart_send_string("BME280 sensor calibration data: ");
+	uart_send_string("BME280 sensor calibration data: "); uart_newline();
 	uart_send_string("dig_T1 = "); uart_send_dec(sensor_interf.calib_data.dig_T1); uart_newline();
 	uart_send_string("dig_T2 = "); uart_send_dec(sensor_interf.calib_data.dig_T2); uart_newline();
 	uart_send_string("dig_T3 = "); uart_send_dec(sensor_interf.calib_data.dig_T3); uart_newline();
@@ -241,17 +242,18 @@ int main(void)
 	uart_newline();	
 	
 	#endif  //OUTPUT_LOG
-	
+	/*
 	#if WEATHER_MONITORING
 	setup_measurement_weather_monitoring(&sensor_interf);
 	#else
 	setup_measurement_normal_mode(&sensor_interf);
 	#endif  //WEATHER_MONITORING
-	
+	*/
     while(1)
     {
+		/*
 		uart_newline();
-		TOGGLE_STATUS_LED;
+		//TOGGLE_STATUS_LED;
 
 		#if WEATHER_MONITORING
 			timer_delay_ms(6000);
@@ -273,5 +275,6 @@ int main(void)
 		#ifdef OUTPUT_LOG
 		uart_send_string("BME280 sensor read with state: ");uart_send_char(0x35+rslt);uart_newline();
 		#endif  //OUTPUT_LOG
+	*/
     }
 }

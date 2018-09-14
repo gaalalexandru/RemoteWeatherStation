@@ -67,7 +67,7 @@
 
 #include "sst25_flash_handler.h"
 
-#define SST25_LOG_ACTIV (1)  //enable UART log for sst25_flash_handler module
+#define SST25_LOG_ACTIV (0)  //enable UART log for sst25_flash_handler module
 
 #define READ				0x03    // SPI Flash opcode: Read up up to 25MHz
 #define READ_FAST			0x0B    // SPI Flash opcode: Read up to 50MHz with 1 dummy byte

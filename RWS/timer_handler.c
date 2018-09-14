@@ -7,18 +7,24 @@
 
 //Select timer0 (8 bit) to use for PWM generation
 //Select timer1 (16 bit) to handle status LED
-//Select timer2 (8 bit) to use for millisecond counter & delay functionality
+//Select timer2 (8 bit) to use for A: high precision 1 second real time counter functionality
+//                                 B: low precision millisecond counter for delay functionality
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/atomic.h>
 #include "configuration.h"
 #include "timer_handler.h"
+#include "uart_handler.h"
+
+#define TIMER_LOG_ACTIV (1)
+#define TOGGLE_STATUS_LED	(STATUS_LED_PORT ^= (1 << STATUS_LED_PIN))
 
 /************************************************************************/
 /*	                          Global Variables                          */
 /************************************************************************/
 volatile uint32_t timer_system_ms = 0;  //system startup counter in milliseconds
+volatile uint32_t timer_sec_rtc = 0;  //rtc second counter
 
 /************************************************************************/
 /*	                  Timer Initialization Functions                    */
@@ -75,16 +81,30 @@ void timer1_init(void)
 /* Timer2 - 8bit Initialization function*/
 void timer2_init(void)
 {
+	#if TIMER2_USE_EXTERNAL_CRYSTAL
+	ASSR |= (1<<AS2);
+	#endif  //TIMER2_USE_EXTERNAL_CRYSTAL
+	
 	//Clear Timer on Compare mode and /64 prescaler, OC pin disabled
 	//timer2 clock = system clock / 64
 	#if ATMEGA48
-	TCCR2A = (1 << WGM21);
-	//TCCR2B = (1 << CS22);  //for 64 prescaler
-	TCCR2B = (1 << CS21)|(1 << CS20);  //for 32 prescaler
+		//TCCR2A = (1 << WGM21);
+		//TCCR2B = (1 << CS22);  //for 64 prescaler
+		//TCCR2B = (1 << CS21)|(1 << CS20);  //for 32 prescaler
 	#elif ATMEGA8
-	TCCR2 = (1 << WGM21)|(1 << CS21)|(1 << CS20);
-	#endif
+		//TCCR2 = (1 << WGM21)|(1 << CS21)|(1 << CS20);
+		TCCR2 = (1 << CS22)|(1 << CS20);  //mode 0, 128 prescaler	
+	#endif  //ATMEGA8
+	
+	#if TIMER2_USE_EXTERNAL_CRYSTAL
+	while(ASSR & (1<<TCR2UB)) {}
+	#endif  //TIMER2_USE_EXTERNAL_CRYSTAL
+	
 	TCNT2 = 0;
+	#if TIMER2_USE_EXTERNAL_CRYSTAL
+	while(ASSR & (1<<TCN2UB)) {}
+	#endif  //TIMER2_USE_EXTERNAL_CRYSTAL
+	
 	
 	//XYZ clock cycles is equivalent to 1 ms with the following setup:
 
@@ -97,15 +117,20 @@ void timer2_init(void)
 		//timer2 clock prescaler (divider) = 32 => timer1 clock 125 kHz
 		//4000000 / 32 = 125000 (1 second)
 		// 125000 / 1000 = 125 (1 millisecond)
-		
-
+	
 			
 	#if ATMEGA48
-	OCR2A = 125;
-	TIMSK2  |= (1 << OCIE2A);  //Enable Timer1 output compare trigger OCIE2A	
+		OCR2A = 125;
+		#if TIMER2_USE_EXTERNAL_CRYSTAL
+		while(ASSR & (1<<OCR2UB)) {}
+		#endif  //TIMER2_USE_EXTERNAL_CRYSTAL
+		TIMSK2  |= (1 << OCIE2A);  //Enable Timer1 output compare trigger OCIE2A	
 	#elif ATMEGA8
-	OCR2 = 125;
-	TIMSK  |= (1 << OCIE2);  //Enable Timer1 output compare trigger OCIE2
+		OCR2 = 25;
+		#if TIMER2_USE_EXTERNAL_CRYSTAL
+		while(ASSR & (1<<OCR2UB)) {}
+		#endif  //TIMER2_USE_EXTERNAL_CRYSTAL
+		TIMSK  |= (1 << TOIE2)|(1 << OCIE2);  //Enable Timer1 output compare trigger OCIE2
 	#endif //ATMEGA8
 }
 
@@ -160,9 +185,31 @@ ISR (TIMER2_COMPA_vect)
 ISR (TIMER2_COMP_vect)
 #endif
 {
+	#if TIMER_LOG_ACTIV
 	timer_system_ms++; //increment every 1 ms
+	//TOGGLE_STATUS_LED;
+ 	if(!(timer_system_ms % 10)) //print just every second
+ 	{
+	OCR2 += 25;
+	#if TIMER2_USE_EXTERNAL_CRYSTAL
+	while(ASSR & (1<<OCR2UB)) {}
+	#endif  //TIMER2_USE_EXTERNAL_CRYSTAL
+		uart_send_string("Low precision millisecond counter: ");
+		uart_send_udec(timer_system_ms);
+		uart_newline();		
+	}
+	#endif //TIMER_LOG_ACTIV
 }
 
 
-
+ISR (TIMER2_OVF_vect)
+{
+	#if TIMER_LOG_ACTIV
+	TOGGLE_STATUS_LED;
+	timer_sec_rtc++;  //precision increment every second
+	uart_send_string("High precision second counter: ");
+	uart_send_udec(timer_sec_rtc);
+	uart_newline();
+	#endif //TIMER_LOG_ACTIV
+}
 
