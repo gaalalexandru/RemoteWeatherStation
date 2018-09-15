@@ -12,7 +12,7 @@
 #include <avr/io.h>
 #include <avr/portpins.h>
 
-//#define OUTPUT_LOG
+//#define MAIN_LOG_ACTIV
 
 //////////////////////////////////////////////////////////////////////////
 //					CONTROLLER SELECTION AND CONFIGURATION				//
@@ -30,7 +30,7 @@
 #define FOSC 4000000// Clock Speed
 #define F_CPU FOSC
 
-#define TIMER2_USE_EXTERNAL_CRYSTAL (1)  //Make it true, to activate clock source from external crystal
+
 //////////////////////////////////////////////////////////////////////////
 //							STATUS LED CONFIGURATIONS					//
 //////////////////////////////////////////////////////////////////////////
@@ -78,6 +78,7 @@
 //////////////////////////////////////////////////////////////////////////
 //						 MEASUREMENTS CONFIGURATION						//
 //////////////////////////////////////////////////////////////////////////
-#define WEATHER_MONITORING (1)
+#define WEATHER_MONITORING_INTERVAL_MS (60000)
+#define WEATHER_MONITORING_ACCELERATION (10)
 
 #endif /* CONFIGURATION_H_ */

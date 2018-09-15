@@ -11,8 +11,6 @@
 #include "configuration.h"
 #include "spi_handler.h"
 
-
-
 typedef enum {
 	bme280 = 0,
 	lis3mdl,
@@ -65,13 +63,12 @@ void spi_init(void)
 /*                SPI Send / Receive function definitions               */
 /************************************************************************/
 /* SPI Send and Receive 1 Byte function */
-uint8_t spi_transfer(uint8_t u8data)
+uint8_t spi_transfer_generic(uint8_t u8data)
 {
 	SPDR = u8data;
 	while(!(SPSR & (1<<SPIF))){}
 	return SPDR;
 }
-
 
 /**
 * @brief Callback function for reading and writing registers over SPI
@@ -86,11 +83,10 @@ int8_t spi_transfer_bme280(uint8_t dev_id, uint8_t reg_addr, uint8_t *reg_data, 
 	int8_t rslt = 0; /* Return 0 for Success, non-zero for failure */
 	//select which Chip Select pin has	to be set low to activate the relevant device on the SPI bus
 	if(dev_id == bme280) CLEAR_CS_PIN(CS_BME280_PORT,CS_BME280_PIN);
-
-	spi_transfer(reg_addr); // Write the register address, ignore the return
+	spi_transfer_generic(reg_addr); // Write the register address, ignore the return
 	for (uint16_t i = 0; i < len; i++)
 	{
-		reg_data[i] = spi_transfer(reg_data[i]);
+		reg_data[i] = spi_transfer_generic(reg_data[i]);
 	}
 	if(dev_id == bme280) SET_CS_PIN(CS_BME280_PORT,CS_BME280_PIN);
 	return rslt;
@@ -142,31 +138,31 @@ ISR(SPI_STC_vect)
 #endif  //SPI_USE_INT
 
 #if 0
-	switch(dev_id) {
-		case bme280:
-		CLEAR_CS_PIN(CS_BME280_PORT,CS_BME280_PIN);
-		break;
-		case lis3mdl:
-		CLEAR_CS_PIN(CS_LIS3MDL_PORT,CS_LIS3MDL_PIN);
-		break;
-		case flash:
-		CLEAR_CS_PIN(CS_FLASH_PORT,CS_FLASH_PIN);
-		break;
-		default:
-		break;
+switch(dev_id) {
+	case bme280:
+	CLEAR_CS_PIN(CS_BME280_PORT,CS_BME280_PIN);
+	break;
+	case lis3mdl:
+	CLEAR_CS_PIN(CS_LIS3MDL_PORT,CS_LIS3MDL_PIN);
+	break;
+	case flash:
+	CLEAR_CS_PIN(CS_FLASH_PORT,CS_FLASH_PIN);
+	break;
+	default:
+	break;
+}
+
+switch(dev_id) {
+	case bme280:
+	SET_CS_PIN(CS_BME280_PORT,CS_BME280_PIN);
+	break;
+	case lis3mdl:
+	SET_CS_PIN(CS_LIS3MDL_PORT,CS_LIS3MDL_PIN);
+	break;
+	case flash:
+	SET_CS_PIN(CS_FLASH_PORT,CS_FLASH_PIN);
+	break;
+	default:
+	break;
 	}
-	
-	switch(dev_id) {
-		case bme280:
-		SET_CS_PIN(CS_BME280_PORT,CS_BME280_PIN);
-		break;
-		case lis3mdl:
-		SET_CS_PIN(CS_LIS3MDL_PORT,CS_LIS3MDL_PIN);
-		break;
-		case flash:
-		SET_CS_PIN(CS_FLASH_PORT,CS_FLASH_PIN);
-		break;
-		default:
-		break;
-		}
 #endif

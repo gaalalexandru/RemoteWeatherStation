@@ -5,20 +5,26 @@
  *  Author: Gaal Alexandru
  */
 
-//Select timer0 (8 bit) to use for PWM generation
+//Select timer0 (8 bit) to use for low precision millisecond counter
 //Select timer1 (16 bit) to handle status LED
-//Select timer2 (8 bit) to use for A: high precision 1 second real time counter functionality
-//                                 B: low precision millisecond counter for delay functionality
+//Select timer2 (8 bit) to use for high precision 1 second real time counter functionality                               
+
+#define TIMER_LOG_ACTIV (0)
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/atomic.h>
 #include "configuration.h"
 #include "timer_handler.h"
+#if TIMER_LOG_ACTIV
 #include "uart_handler.h"
+#endif  //TIMER_LOG_ACTIV
 
-#define TIMER_LOG_ACTIV (1)
+#define USE_TIMER_0 (1)
+#define USE_TIMER_1 (0)
+#define USE_TIMER_2 (1)
 #define TOGGLE_STATUS_LED	(STATUS_LED_PORT ^= (1 << STATUS_LED_PIN))
+#define TIMER2_USE_EXTERNAL_CRYSTAL (1)  //Make it true, to activate clock source from external crystal
 
 /************************************************************************/
 /*	                          Global Variables                          */
@@ -31,10 +37,16 @@ volatile uint32_t timer_sec_rtc = 0;  //rtc second counter
 /************************************************************************/
 
 /* Timer0 - 8bit Initialization function*/
-#ifdef USE_TIMER_0
+#if USE_TIMER_0
 void timer0_init(void)
 {
-	TCNT0 = 127;  //to half the timer interval
+	//B: system clock 4 Mhz
+	//timer0 clock prescaler (divider) = 8 => timer1 clock 500 kHz
+	//4000000 / 8 = 500000 (1 second)
+	//500000 / 1000 = 500 (1 millisecond)
+	//500 / 2 = 250 (0.5 millisecond)
+	//use reload value 5 and in ISR increment ms counter every 2nd time
+	TCNT0 = 5;  //to reduce the timer interval
 	#if ATMEGA48
 	TCCR0B = (1 << CS01);  //prescaler 8 (timer0 clock = system clock / 8)
 	TIMSK0  |= (1 << TOIE0);  //Timer0 Overflow Interrupt Enable
@@ -47,7 +59,7 @@ void timer0_init(void)
 
 
 /* Timer1 - 16bit Initialization function*/
-#ifdef USE_TIMER_1
+#if USE_TIMER_1
 void timer1_init(void)
 {
 	TCCR1A = 0;
@@ -78,61 +90,33 @@ void timer1_init(void)
 }
 #endif //USE_TIMER_1
 
-/* Timer2 - 8bit Initialization function*/
+/* Timer2 - 8bit Initialization function
+ * use external crystal 32.768 kHz
+ * timer2 clock prescaler (divider) = 128 => timer1 clock 256 Hz
+ * 32768 / 128 = 256 (1 second)
+ */
+#if USE_TIMER_2
 void timer2_init(void)
 {
 	#if TIMER2_USE_EXTERNAL_CRYSTAL
 	ASSR |= (1<<AS2);
-	#endif  //TIMER2_USE_EXTERNAL_CRYSTAL
-	
-	//Clear Timer on Compare mode and /64 prescaler, OC pin disabled
-	//timer2 clock = system clock / 64
 	#if ATMEGA48
-		//TCCR2A = (1 << WGM21);
-		//TCCR2B = (1 << CS22);  //for 64 prescaler
-		//TCCR2B = (1 << CS21)|(1 << CS20);  //for 32 prescaler
+	//TODO
 	#elif ATMEGA8
-		//TCCR2 = (1 << WGM21)|(1 << CS21)|(1 << CS20);
-		TCCR2 = (1 << CS22)|(1 << CS20);  //mode 0, 128 prescaler	
+	TCCR2 = (1 << CS22)|(1 << CS20);  //mode 0, 128 prescaler	
 	#endif  //ATMEGA8
-	
-	#if TIMER2_USE_EXTERNAL_CRYSTAL
 	while(ASSR & (1<<TCR2UB)) {}
-	#endif  //TIMER2_USE_EXTERNAL_CRYSTAL
 	
 	TCNT2 = 0;
-	#if TIMER2_USE_EXTERNAL_CRYSTAL
 	while(ASSR & (1<<TCN2UB)) {}
-	#endif  //TIMER2_USE_EXTERNAL_CRYSTAL
-	
-	
-	//XYZ clock cycles is equivalent to 1 ms with the following setup:
-
-	//A: system clock 8 MHz
-		//timer2 clock prescaler (divider) = 64 => timer1 clock 125 kHz
-		//8000000 / 64 = 125000 (1 second)
-		// 125000 / 1000 = 125 (1 millisecond)
-		
-	//B: system clock 4 MHz
-		//timer2 clock prescaler (divider) = 32 => timer1 clock 125 kHz
-		//4000000 / 32 = 125000 (1 second)
-		// 125000 / 1000 = 125 (1 millisecond)
-	
-			
 	#if ATMEGA48
-		OCR2A = 125;
-		#if TIMER2_USE_EXTERNAL_CRYSTAL
-		while(ASSR & (1<<OCR2UB)) {}
-		#endif  //TIMER2_USE_EXTERNAL_CRYSTAL
-		TIMSK2  |= (1 << OCIE2A);  //Enable Timer1 output compare trigger OCIE2A	
+		//TIMSK2  |= (1 << OCIE2A);  //Enable Timer1 output compare trigger OCIE2A	
 	#elif ATMEGA8
-		OCR2 = 25;
-		#if TIMER2_USE_EXTERNAL_CRYSTAL
-		while(ASSR & (1<<OCR2UB)) {}
-		#endif  //TIMER2_USE_EXTERNAL_CRYSTAL
-		TIMSK  |= (1 << TOIE2)|(1 << OCIE2);  //Enable Timer1 output compare trigger OCIE2
+		TIMSK  |= (1 << TOIE2)/*|(1 << OCIE2)*/;  //Enable Timer2 overflow interrupt
 	#endif //ATMEGA8
+	#endif //TIMER2_USE_EXTERNAL_CRYSTAL
 }
+#endif //USE_TIMER_2
 
 /************************************************************************/
 /*	                 Timer Delay / Counter Functions                    */
@@ -159,17 +143,23 @@ inline uint32_t timer_ms(void)
 /*	               Timer Interrupt Service Routines                     */
 /************************************************************************/
 
-#ifdef USE_TIMER_0
+#if USE_TIMER_0
 /* Timer0 Overflow Interrupt function*/
 ISR (TIMER0_OVF_vect)
 {
-	TCNT0 = 127;
-	//pwm_update();
+	static uint8_t u8switch = 0;
+	if(u8switch) {  //every 2nd time
+		timer_system_ms++; //increment 1 ms
+	}
+	u8switch ^= 1; //toggle switch
+	TCNT0 = 5;  //reset to 5
+	
 }
-
 #endif //USE_TIMER_0
 
-#ifdef USE_TIMER_1
+
+
+#if USE_TIMER_1
 /* Timer1 Compare Match A Interrupt function*/
 ISR (TIMER1_COMPA_vect)
 {
@@ -178,38 +168,31 @@ ISR (TIMER1_COMPA_vect)
 }
 #endif //USE_TIMER_1
 
-/* Timer2 Interrupt function*/
-#if ATMEGA48
-ISR (TIMER2_COMPA_vect)
-#elif ATMEGA8
-ISR (TIMER2_COMP_vect)
-#endif
-{
-	#if TIMER_LOG_ACTIV
-	timer_system_ms++; //increment every 1 ms
-	//TOGGLE_STATUS_LED;
- 	if(!(timer_system_ms % 10)) //print just every second
- 	{
-	OCR2 += 25;
-	#if TIMER2_USE_EXTERNAL_CRYSTAL
-	while(ASSR & (1<<OCR2UB)) {}
-	#endif  //TIMER2_USE_EXTERNAL_CRYSTAL
-		uart_send_string("Low precision millisecond counter: ");
-		uart_send_udec(timer_system_ms);
-		uart_newline();		
-	}
-	#endif //TIMER_LOG_ACTIV
-}
-
-
+#if USE_TIMER_2
+/* Timer2 Interrupt functions*/
+/*Overflow ISR*/
 ISR (TIMER2_OVF_vect)
 {
+	timer_sec_rtc++;  //precision increment every second
 	#if TIMER_LOG_ACTIV
 	TOGGLE_STATUS_LED;
-	timer_sec_rtc++;  //precision increment every second
-	uart_send_string("High precision second counter: ");
-	uart_send_udec(timer_sec_rtc);
-	uart_newline();
+	uart_send_udec(timer_sec_rtc); uart_newline();
+	uart_send_udec(timer_system_ms); uart_newline();
+	//uart_send_string("High precision second counter: "); uart_send_udec(timer_sec_rtc); uart_newline();
+	//uart_send_string("Low precision millisecond counter: "); uart_send_udec(timer_system_ms); uart_newline();
 	#endif //TIMER_LOG_ACTIV
 }
+
+/*Compare value ISR*/
+#if 0
+	#if ATMEGA48
+	ISR (TIMER2_COMPA_vect)
+	#elif ATMEGA8
+	ISR (TIMER2_COMP_vect)
+	#endif
+	{
+		timer_system_ms++; //increment every 1 ms
+	}
+#endif
+#endif //USE_TIMER_2
 

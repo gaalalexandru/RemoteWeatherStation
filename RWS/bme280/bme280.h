@@ -237,7 +237,8 @@ int8_t bme280_compensate_data(uint8_t sensor_comp, const struct bme280_uncomp_da
 /*   Additional functions to interface static functions to RWS project  */
 /*   Gaal Alexandru 14/09/2018											*/
 /************************************************************************/
-
+int8_t bme280_setup_weather_monitoring_meas(struct bme280_dev *dev);
+int8_t bme280_setup_normal_mode_meas(struct bme280_dev *dev);
 int8_t bme280_get_raw_sensor_data(uint8_t sensor_comp, struct bme280_uncomp_data *uncomp_data , struct bme280_dev *dev);
 
 #ifdef __cplusplus

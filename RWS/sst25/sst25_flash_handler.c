@@ -67,7 +67,7 @@
 
 #include "sst25_flash_handler.h"
 
-#define SST25_LOG_ACTIV (0)  //enable UART log for sst25_flash_handler module
+#define SST25_LOG_ACTIV (1)  //enable UART log for sst25_flash_handler module
 
 #define READ				0x03    // SPI Flash opcode: Read up up to 25MHz
 #define READ_FAST			0x0B    // SPI Flash opcode: Read up to 50MHz with 1 dummy byte
@@ -114,10 +114,8 @@ static union
 	} bits;
 } deviceCaps;
 
-
 static void wait_while_busy(void);
 //static void _GetStatus(void);
-
 
 /*****************************************************************************
   Function:
@@ -151,14 +149,14 @@ void sst25_flash_init(void)
 	
 	// Read Device ID code to determine supported device capabilities/instructions
 	// Send instruction
-	spi_transfer(RDID);
+	spi_transfer_generic(RDID);
 	// Send 3 byte address (0x000000), returned value of spi_transfer is not important now
-	spi_transfer(0x00);  //i=0
-	spi_transfer(0x00);  //i=1
-	spi_transfer(0x00);  //i=2
+	spi_transfer_generic(0x00);  //i=0
+	spi_transfer_generic(0x00);  //i=1
+	spi_transfer_generic(0x00);  //i=2
 	
 	//get Manufacture ID
-	u8SerialReturnData = spi_transfer(0x00);  //i=3, sent value through spi_transfer is not important now
+	u8SerialReturnData = spi_transfer_generic(0x00);  //i=3, sent value through spi_transfer is not important now
 	#if SST25_LOG_ACTIV
 	uart_send_string("manufacturer ID: ");
 	uart_send_char(u8SerialReturnData);
@@ -166,7 +164,7 @@ void sst25_flash_init(void)
 	#endif //SST25_LOG_ACTIV
 	
 	//get Device ID
-	u8SerialReturnData = spi_transfer(0x00);  //i=4, sent value through spi_transfer is not important now
+	u8SerialReturnData = spi_transfer_generic(0x00);  //i=4, sent value through spi_transfer is not important now
 	#if SST25_LOG_ACTIV
 	uart_send_string("device ID: ");
 	uart_send_char(u8SerialReturnData);
@@ -215,8 +213,8 @@ void sst25_flash_init(void)
 
 	// Clear Write-Protect on all memory locations
 	ENABLE_CS_FLASH;
-	spi_transfer(WRSR);
-	spi_transfer(0x00); // Clear all block protect bits
+	spi_transfer_generic(WRSR);
+	spi_transfer_generic(0x00); // Clear all block protect bits
 	DISABLE_CS_FLASH;
 }
 
@@ -265,22 +263,16 @@ void sst25_read_array(uint32_t u32address, uint8_t *pu8data, uint16_t u16len)
 	#endif  //SST25_LOG_ACTIV
 
 	// Issue READ command with address
-	spi_transfer(READ);
-	spi_transfer(((uint8_t*)&u32address)[2]);
-	spi_transfer(((uint8_t*)&u32address)[1]);
-	spi_transfer(((uint8_t*)&u32address)[0]);
+	spi_transfer_generic(READ);
+	spi_transfer_generic(((uint8_t*)&u32address)[2]);
+	spi_transfer_generic(((uint8_t*)&u32address)[1]);
+	spi_transfer_generic(((uint8_t*)&u32address)[0]);
 
 	// Read data
 	while(u16len--)
 	{
-		*pu8data++ = spi_transfer(0xFF);
-// 		uart_send_string("reading....");
-// 		uart_send_char(*pu8data);
-// 		uart_newline();
+		*pu8data++ = spi_transfer_generic(0xFF);
 	}
-	
-	
-	
 	DISABLE_CS_FLASH;
 }
 
@@ -368,11 +360,11 @@ void sst25_write(uint8_t u8data)
 	#endif //SST25_LOG_ACTIV
 	
 	ENABLE_CS_FLASH;
-	spi_transfer(WRITE); // Issue WRITE command with address
-	spi_transfer(((uint8_t*)&g_u32WriteAddr)[2]);
-	spi_transfer(((uint8_t*)&g_u32WriteAddr)[1]);
-	spi_transfer(((uint8_t*)&g_u32WriteAddr)[0]);
-	spi_transfer(u8data);  // Write the byte
+	spi_transfer_generic(WRITE); // Issue WRITE command with address
+	spi_transfer_generic(((uint8_t*)&g_u32WriteAddr)[2]);
+	spi_transfer_generic(((uint8_t*)&g_u32WriteAddr)[1]);
+	spi_transfer_generic(((uint8_t*)&g_u32WriteAddr)[0]);
+	spi_transfer_generic(u8data);  // Write the byte
 	g_u32WriteAddr++;  // Move to next address
 	DISABLE_CS_FLASH;
 	
@@ -471,10 +463,10 @@ void sst25_write_array(uint8_t* u8data, uint16_t u16len)
 			ENABLE_CS_FLASH;
 
 			// Issue WRITE_xxx_STREAM command with address
-			spi_transfer(vOpcode); //0xAF for SST25VF01A
-			spi_transfer(((uint8_t*)&g_u32WriteAddr)[2]);
-			spi_transfer(((uint8_t*)&g_u32WriteAddr)[1]);
-			spi_transfer(((uint8_t*)&g_u32WriteAddr)[0]);
+			spi_transfer_generic(vOpcode); //0xAF for SST25VF01A
+			spi_transfer_generic(((uint8_t*)&g_u32WriteAddr)[2]);
+			spi_transfer_generic(((uint8_t*)&g_u32WriteAddr)[1]);
+			spi_transfer_generic(((uint8_t*)&g_u32WriteAddr)[0]);
 			isStarted = true;
 		}
 		// Otherwise, just write the AAI command again
@@ -482,14 +474,14 @@ void sst25_write_array(uint8_t* u8data, uint16_t u16len)
 		{
 			ENABLE_CS_FLASH;  // Assert the chip select pin
 			// Issue the WRITE_STREAM command for continuation
-			spi_transfer(vOpcode);
+			spi_transfer_generic(vOpcode);
 		}
 
 		// Write a byte or two depending on device AAI write capabilities
 		// for SST25VF01A just write 1 byte at a time
 		for(i = 0; i <= deviceCaps.bits.bWriteWordStream; i++)
 		{
-			spi_transfer(*u8data++);		
+			spi_transfer_generic(*u8data++);		
 			g_u32WriteAddr++;
 			u16len--;
 		}
@@ -544,10 +536,10 @@ void sst25_erase_sector(uint32_t u32address)
 	sst25_send_byte_command(WREN); // Enable writing
 	ENABLE_CS_FLASH;
 	// Issue ERASE command with address
-	spi_transfer(ERASE_4K);
-	spi_transfer(((uint8_t*)&u32address)[2]);
-	spi_transfer(((uint8_t*)&u32address)[1]);
-	spi_transfer(((uint8_t*)&u32address)[0]);
+	spi_transfer_generic(ERASE_4K);
+	spi_transfer_generic(((uint8_t*)&u32address)[2]);
+	spi_transfer_generic(((uint8_t*)&u32address)[1]);
+	spi_transfer_generic(((uint8_t*)&u32address)[0]);
 	DISABLE_CS_FLASH;
 	wait_while_busy(); // Wait for erase to complete
 }
@@ -614,7 +606,7 @@ void sst25_send_byte_command(uint8_t cmd)
 {
 	uint8_t u8SerialData  = cmd;
 	ENABLE_CS_FLASH;
-	spi_transfer(u8SerialData); // Send instruction, ignore the return
+	spi_transfer_generic(u8SerialData); // Send instruction, ignore the return
 	DISABLE_CS_FLASH;
 }
 
@@ -645,10 +637,10 @@ static void wait_while_busy(void)
 
 	ENABLE_CS_FLASH;
 	// Send Read Status Register instruction
-	spi_transfer(RDSR);
+	spi_transfer_generic(RDSR);
 	do  // Poll the BUSY bit
 	{
-		u8data = spi_transfer(0xFF);
+		u8data = spi_transfer_generic(0xFF);
 	} while(u8data & BUSY);
 	DISABLE_CS_FLASH;
 }

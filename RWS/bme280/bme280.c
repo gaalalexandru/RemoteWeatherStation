@@ -1277,12 +1277,50 @@ static int8_t null_ptr_check(const struct bme280_dev *dev)
 /*   Additional functions to interface static functions to RWS project  */
 /*   Gaal Alexandru 14/09/2018											*/
 /************************************************************************/
+int8_t bme280_setup_weather_monitoring_meas(struct bme280_dev *dev)
+{
+	int8_t rslt;
+	uint8_t settings_sel;
+	/* Recommended mode of operation: Weather monitoring */
+	dev->settings.osr_h = BME280_OVERSAMPLING_1X;
+	dev->settings.osr_p = BME280_OVERSAMPLING_1X;
+	dev->settings.osr_t = BME280_OVERSAMPLING_1X;
+	dev->settings.filter = BME280_FILTER_COEFF_OFF;
+	
+	settings_sel = BME280_OSR_PRESS_SEL;
+	settings_sel |= BME280_OSR_TEMP_SEL;
+	settings_sel |= BME280_OSR_HUM_SEL;
+	settings_sel |= BME280_FILTER_SEL;
+	rslt = bme280_set_sensor_settings(settings_sel, dev);
+	return rslt;
+}
+
+int8_t bme280_setup_normal_mode_meas(struct bme280_dev *dev)
+{
+	int8_t rslt;
+	uint8_t settings_sel;
+	/* Recommended mode of operation: Indoor navigation ???*/
+	dev->settings.osr_h = BME280_OVERSAMPLING_1X;
+	dev->settings.osr_p = BME280_OVERSAMPLING_16X;
+	dev->settings.osr_t = BME280_OVERSAMPLING_2X;
+	dev->settings.filter = BME280_FILTER_COEFF_16;
+	dev->settings.standby_time = BME280_STANDBY_TIME_62_5_MS;
+
+	settings_sel = BME280_OSR_PRESS_SEL;
+	settings_sel |= BME280_OSR_TEMP_SEL;
+	settings_sel |= BME280_OSR_HUM_SEL;
+	settings_sel |= BME280_STANDBY_SEL;
+	settings_sel |= BME280_FILTER_SEL;
+	rslt = bme280_set_sensor_settings(settings_sel, dev);
+	rslt *= 10;
+	rslt += bme280_set_sensor_mode(BME280_NORMAL_MODE, dev);
+	return rslt;
+}
 
 int8_t bme280_get_raw_sensor_data(uint8_t sensor_comp, struct bme280_uncomp_data *uncomp_data , struct bme280_dev *dev)
 {
 	int8_t rslt;
-	/* Array to store the pressure, temperature and humidity data read from
-	the sensor */
+	/* Array to store the pressure, temperature and humidity data read from the sensor */
 	uint8_t reg_data[BME280_P_T_H_DATA_LEN] = {0};
 
 	/* Check for null pointer in the device structure*/
