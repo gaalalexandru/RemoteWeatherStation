@@ -9,7 +9,7 @@
 //Select timer1 (16 bit) to handle status LED
 //Select timer2 (8 bit) to use for high precision 1 second real time counter functionality                               
 
-#define TIMER_LOG_ACTIV (0)
+#define TIMER_LOG_ACTIV (1)
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -26,12 +26,24 @@
 #define TOGGLE_STATUS_LED	(STATUS_LED_PORT ^= (1 << STATUS_LED_PIN))
 #define TIMER2_USE_EXTERNAL_CRYSTAL (1)  //Make it true, to activate clock source from external crystal
 
+
+typedef struct {
+	uint8_t year;
+	uint8_t month;
+	uint8_t day;
+	uint8_t hour;
+	uint8_t minute;
+	uint8_t second;
+} st_date_time;
+
+
+
 /************************************************************************/
 /*	                          Global Variables                          */
 /************************************************************************/
 volatile uint32_t timer_system_ms = 0;  //system startup counter in milliseconds
-volatile uint32_t timer_sec_rtc = 0;  //rtc second counter
-
+//volatile uint32_t timer_sec_rtc = 0;  //rtc second counter
+volatile st_date_time timestamp = {18,9,15,22,06,00};  //timestamp
 /************************************************************************/
 /*	                  Timer Initialization Functions                    */
 /************************************************************************/
@@ -173,13 +185,59 @@ ISR (TIMER1_COMPA_vect)
 /*Overflow ISR*/
 ISR (TIMER2_OVF_vect)
 {
-	timer_sec_rtc++;  //precision increment every second
+	static uint8_t u8days;
+	//timer_sec_rtc++;  //precision increment every second
+	timestamp.second = (timestamp.second + 1) % 60;
+	if (timestamp.second == 0) {  //1 minute passed
+		timestamp.minute  = (timestamp.minute + 1) % 60;
+		if (timestamp.minute == 0) {  //1 hour passed
+			timestamp.hour  = (timestamp.hour + 1) % 24;
+			if (timestamp.hour == 0) { //1 day passed
+				switch(timestamp.month)
+				{
+					case 1:  //handler 31 day mounts
+					case 3:
+					case 5:
+					case 7:
+					case 8:
+					case 10:
+					case 12:
+						u8days = 31;
+					break;
+					case 4:
+					case 6:
+					case 9:
+					case 11:
+						u8days = 30;
+					break;
+					case 2:
+						if (timestamp.year % 4 != 0) {
+							u8days = 28;
+						} else {
+							u8days = 29;
+						}
+				}
+				timestamp.day = ((timestamp.day % u8days) + 1);
+				if(timestamp.day == u8days) { //1 month passed
+					timestamp.month = ((timestamp.day % 12) + 1);
+					if(timestamp.month == 12) {
+						timestamp.year++; //1 year passed
+					}
+				}
+			}
+		}
+	}
 	#if TIMER_LOG_ACTIV
 	TOGGLE_STATUS_LED;
-	uart_send_udec(timer_sec_rtc); uart_newline();
-	uart_send_udec(timer_system_ms); uart_newline();
-	//uart_send_string("High precision second counter: "); uart_send_udec(timer_sec_rtc); uart_newline();
-	//uart_send_string("Low precision millisecond counter: "); uart_send_udec(timer_system_ms); uart_newline();
+	//uart_send_udec(timer_sec_rtc); uart_newline();
+	//uart_send_udec(timer_system_ms); uart_newline();
+	uart_send_udec(20); uart_send_udec(timestamp.year); uart_send_string("/");
+	uart_send_udec(timestamp.month); uart_send_string("/");
+	uart_send_udec(timestamp.day); uart_send_string(" -> ");
+	uart_send_udec(timestamp.hour); uart_send_string(":");
+	uart_send_udec(timestamp.minute); uart_send_string(":");
+	uart_send_udec(timestamp.second);
+	uart_newline();
 	#endif //TIMER_LOG_ACTIV
 }
 
@@ -195,4 +253,3 @@ ISR (TIMER2_OVF_vect)
 	}
 #endif
 #endif //USE_TIMER_2
-

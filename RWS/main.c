@@ -28,10 +28,10 @@
 #define SET_PORT(x,y)	(x) |=(1<<(y))
 #define CLEAR_PORT(x,y)	(x) &= ~(1<<(y))
 
+#define MAIN_LOG_ACTIV (0)
+
 struct bme280_dev sensor_interf;
 
-
-#define MAIN_LOG_ACTIV (0)
 
 void print_sensor_data(struct bme280_data *comp_data)
 {
