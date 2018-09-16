@@ -36,14 +36,12 @@ typedef struct {
 	uint8_t second;
 } st_date_time;
 
-
-
 /************************************************************************/
 /*	                          Global Variables                          */
 /************************************************************************/
 volatile uint32_t timer_system_ms = 0;  //system startup counter in milliseconds
 //volatile uint32_t timer_sec_rtc = 0;  //rtc second counter
-volatile st_date_time timestamp = {18,9,15,22,06,00};  //timestamp
+volatile st_date_time timestamp = {18,9,16,0,39,0};  //timestamp
 /************************************************************************/
 /*	                  Timer Initialization Functions                    */
 /************************************************************************/
@@ -195,7 +193,7 @@ ISR (TIMER2_OVF_vect)
 			if (timestamp.hour == 0) { //1 day passed
 				switch(timestamp.month)
 				{
-					case 1:  //handler 31 day mounts
+					case 1:  //handler 31 day months
 					case 3:
 					case 5:
 					case 7:
@@ -204,13 +202,13 @@ ISR (TIMER2_OVF_vect)
 					case 12:
 						u8days = 31;
 					break;
-					case 4:
+					case 4:  //handler 30 day months
 					case 6:
 					case 9:
 					case 11:
 						u8days = 30;
 					break;
-					case 2:
+					case 2:   //handle February and leap years
 						if (timestamp.year % 4 != 0) {
 							u8days = 28;
 						} else {
@@ -219,7 +217,7 @@ ISR (TIMER2_OVF_vect)
 				}
 				timestamp.day = ((timestamp.day % u8days) + 1);
 				if(timestamp.day == u8days) { //1 month passed
-					timestamp.month = ((timestamp.day % 12) + 1);
+					timestamp.month = ((timestamp.month % 12) + 1);
 					if(timestamp.month == 12) {
 						timestamp.year++; //1 year passed
 					}
