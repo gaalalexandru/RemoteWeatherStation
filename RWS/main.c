@@ -32,6 +32,9 @@
 
 struct bme280_dev sensor_interf;
 
+extern volatile st_date_time timestamp; //timestamp
+extern volatile uint8_t g_u8start_measurement; //flag to trigger measurement start
+uint8_t g_u8data_frame[DATA_FRAME_SIZE];
 
 void print_sensor_data(struct bme280_data *comp_data)
 {
@@ -57,7 +60,7 @@ int main(void)
 	struct bme280_data comp_data;
 	struct bme280_uncomp_data uncomp_data;	
 	uint8_t pu8dreturnata[5] = {0,0,0,0,0};
-
+	uint8_t i = 0;
 	INIT_STATUS_LED;
 	
 	cli();  //Disable interrupts
@@ -155,22 +158,62 @@ int main(void)
 	
     while(1)
     {	
-		//wait 6 seconds during development, 60 seconds in final product
-		timer_delay_ms(WEATHER_MONITORING_INTERVAL_MS  / WEATHER_MONITORING_ACCELERATION);
-		
-		rslt = bme280_set_sensor_mode(BME280_FORCED_MODE, &sensor_interf);  //trigger forced measurement
-		sensor_interf.delay_ms(40);  //delay needed for measurement to complete
-		#if MAIN_LOG_ACTIV
-		uart_send_string("BME280 sensor force mode trigger with state: ");uart_send_dec(rslt);uart_newline();
-		#endif  //MAIN_LOG_ACTIV
-		
-		
-		rslt = bme280_get_raw_sensor_data(BME280_ALL, &uncomp_data, &sensor_interf);
-		print_sensor_raw_data(&uncomp_data);
-		#if MAIN_LOG_ACTIV
-		uart_send_string("BME280 sensor RAW read with state: ");uart_send_dec(rslt);uart_newline();
-		#endif  //MAIN_LOG_ACTIV
-
+		if(g_u8start_measurement) 
+		{
+			g_u8start_measurement = 0;
+			//wait 6 seconds during development, 60 seconds in final product
+			//timer_delay_ms(WEATHER_MONITORING_INTERVAL_MS  / WEATHER_MONITORING_ACCELERATION);
+			
+			#if MAIN_LOG_ACTIV
+			uart_send_udec(20); uart_send_udec(timestamp.year); uart_send_string("/");
+			uart_send_udec(timestamp.month); uart_send_string("/");
+			uart_send_udec(timestamp.day); uart_send_string(" -> ");
+			uart_send_udec(timestamp.hour); uart_send_string(":");
+			uart_send_udec(timestamp.minute); uart_send_string(":");
+			uart_send_udec(timestamp.second);
+			uart_newline();
+			#endif //MAIN_LOG_ACTIV
+			
+			rslt = bme280_set_sensor_mode(BME280_FORCED_MODE, &sensor_interf);  //trigger forced measurement
+			sensor_interf.delay_ms(40);  //delay needed for measurement to complete
+			#if MAIN_LOG_ACTIV
+			uart_send_string("BME280 sensor force mode trigger with state: ");uart_send_dec(rslt);uart_newline();
+			#endif  //MAIN_LOG_ACTIV
+			
+			
+			rslt = bme280_get_raw_sensor_data(BME280_ALL, &uncomp_data, &sensor_interf);
+			print_sensor_raw_data(&uncomp_data);
+			#if MAIN_LOG_ACTIV
+			uart_send_string("BME280 sensor RAW read with state: ");uart_send_dec(rslt);uart_newline();
+			#endif  //MAIN_LOG_ACTIV
+			
+			g_u8data_frame[0] = DATA_FRAME_SEPARATOR;
+			g_u8data_frame[1] = timestamp.year;
+			g_u8data_frame[2] = timestamp.month;
+			g_u8data_frame[3] = timestamp.day;
+			g_u8data_frame[4] = timestamp.hour;
+			g_u8data_frame[5] = timestamp.minute;
+			g_u8data_frame[6] = timestamp.second;
+			g_u8data_frame[7] = DATA_FRAME_SEPARATOR;
+			g_u8data_frame[8] = (uint8_t)((uncomp_data.pressure>>12) & 0xFF);
+			g_u8data_frame[9] = (uint8_t)((uncomp_data.pressure>>4) & 0xFF);
+			g_u8data_frame[10] = (uint8_t)(uncomp_data.pressure & 0x0F);
+			g_u8data_frame[11] = DATA_FRAME_SEPARATOR;
+			g_u8data_frame[12] = (uint8_t)((uncomp_data.temperature>>12) & 0xFF);
+			g_u8data_frame[13] = (uint8_t)((uncomp_data.temperature>>4) & 0xFF);
+			g_u8data_frame[14] = (uint8_t)(uncomp_data.temperature & 0x0F);
+			g_u8data_frame[15] = DATA_FRAME_SEPARATOR;
+			g_u8data_frame[16] = (uint8_t)((uncomp_data.humidity>>8) & 0xFF);
+			g_u8data_frame[17] = (uint8_t)(uncomp_data.humidity & 0xFF);
+			g_u8data_frame[18] = DATA_FRAME_SEPARATOR;
+			for (i=19; i<DATA_FRAME_SIZE; i++) {
+				g_u8data_frame[i] = 0xFF;
+			}
+			
+			for (i=0; i<19; i++) {
+				uart_send_dec(i); uart_send_char('>'); uart_send_dec(g_u8data_frame[i]); uart_newline();
+			}
+		}
 
 		/*
 		rslt = bme280_get_sensor_data(BME280_ALL, &comp_data, &sensor_interf);
@@ -181,4 +224,11 @@ int main(void)
 		*/
 	
     }
+}
+
+void save_measurements(void)
+{
+	uint8_t u8sector_nr;
+	uint8_t u8data_frame_nr;
+	u8sector_nr = timestamp.hour;
 }

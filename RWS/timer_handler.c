@@ -9,7 +9,7 @@
 //Select timer1 (16 bit) to handle status LED
 //Select timer2 (8 bit) to use for high precision 1 second real time counter functionality                               
 
-#define TIMER_LOG_ACTIV (1)
+#define TIMER_LOG_ACTIV (0)
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -27,21 +27,14 @@
 #define TIMER2_USE_EXTERNAL_CRYSTAL (1)  //Make it true, to activate clock source from external crystal
 
 
-typedef struct {
-	uint8_t year;
-	uint8_t month;
-	uint8_t day;
-	uint8_t hour;
-	uint8_t minute;
-	uint8_t second;
-} st_date_time;
-
 /************************************************************************/
 /*	                          Global Variables                          */
 /************************************************************************/
 volatile uint32_t timer_system_ms = 0;  //system startup counter in milliseconds
 //volatile uint32_t timer_sec_rtc = 0;  //rtc second counter
 volatile st_date_time timestamp = {18,9,16,0,39,0};  //timestamp
+volatile uint8_t g_u8start_measurement = 0; //flag to trigger measurement start
+	
 /************************************************************************/
 /*	                  Timer Initialization Functions                    */
 /************************************************************************/
@@ -187,6 +180,8 @@ ISR (TIMER2_OVF_vect)
 	//timer_sec_rtc++;  //precision increment every second
 	timestamp.second = (timestamp.second + 1) % 60;
 	if (timestamp.second == 0) {  //1 minute passed
+		//signal reading trigger
+		g_u8start_measurement = 1;
 		timestamp.minute  = (timestamp.minute + 1) % 60;
 		if (timestamp.minute == 0) {  //1 hour passed
 			timestamp.hour  = (timestamp.hour + 1) % 24;

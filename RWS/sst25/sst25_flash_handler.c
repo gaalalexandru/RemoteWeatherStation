@@ -58,16 +58,18 @@
 										Added chip erase function
 										Removed dependencies with MCUs
 ********************************************************************/
+#define SST25_LOG_ACTIV (0)  //enable UART log for sst25_flash_handler module
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include "../configuration.h"
 #include "../spi_handler.h"
-#include "../uart_handler.h"
-
 #include "sst25_flash_handler.h"
 
-#define SST25_LOG_ACTIV (1)  //enable UART log for sst25_flash_handler module
+#if SST25_LOG_ACTIV
+#include "../uart_handler.h"
+#endif //SST25_LOG_ACTIV
 
 #define READ				0x03    // SPI Flash opcode: Read up up to 25MHz
 #define READ_FAST			0x0B    // SPI Flash opcode: Read up to 50MHz with 1 dummy byte
@@ -244,14 +246,16 @@ void sst25_read_array(uint32_t u32address, uint8_t *pu8data, uint16_t u16len)
 	// Ignore operations when the destination is NULL or nothing to read
 	if(pu8data == NULL || u16len == 0) 
 	{
-		uart_send_string("error");
+		#if SST25_LOG_ACTIV
+		uart_send_string("error, read function has incorrect parameters");
 		uart_newline();
+		#endif  //SST25_LOG_ACTIV
 		return;
 	}
 
 	ENABLE_CS_FLASH;
 
-	#if 0//SST25_LOG_ACTIV
+	#if SST25_LOG_ACTIV
 	uart_send_string("Address split into bytes: ");
 	uart_newline();
 	uart_send_char(((uint8_t*)&u32address)[2]);
