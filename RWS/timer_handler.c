@@ -221,7 +221,7 @@ ISR (TIMER2_OVF_vect)
 			}
 		}
 	}
-	TOGGLE_STATUS_LED;
+	//TOGGLE_STATUS_LED;
 	#if TIMER_LOG_ACTIV	
 	//uart_send_udec(timer_sec_rtc); uart_newline();
 	//uart_send_udec(timer_system_ms); uart_newline();

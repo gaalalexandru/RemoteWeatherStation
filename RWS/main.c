@@ -31,6 +31,7 @@
 #define CLEAR_PORT(x,y)	(x) &= ~(1<<(y))
 
 #define MAIN_LOG_ACTIV (0)
+#define DATAFRAME_LOG_ACTIV (1)
 
 struct bme280_dev sensor_interf;
 
@@ -167,21 +168,21 @@ int main(void)
 	uart_send_string("BME280 sensor setup with state: ");uart_send_dec(rslt);uart_newline();
 	#endif  //MAIN_LOG_ACTIV
 	
+	#if POWER_SAVE_ACTIV
 	set_sleep_mode(SLEEP_MODE_PWR_SAVE);
-	//MCUCR = (1<<SM1) | (1<<SM0);
-	//sleep_mode();
-	
+	#endif //POWER_SAVE_ACTIV
     while(1)
     {	
-		uart_send_char('S');
-		timer_delay_ms(10);
-		//sleep_enable(); 
-		//MCUCR = (1<<SE);
-		//sleep_cpu(); //go to sleep
-		
-		//__asm__ __volatile__ ( "sleep" "\n\t" :: );
-		sleep_mode();
-		uart_send_char('W');
+		#if POWER_SAVE_ACTIV
+			#if MAIN_LOG_ACTIV
+				uart_send_char('S');
+			#endif  //MAIN_LOG_ACTIV
+			timer_delay_ms(10);
+			sleep_mode();
+			#if MAIN_LOG_ACTIV
+				uart_send_char('W');
+			#endif  //MAIN_LOG_ACTIV
+		#endif //POWER_SAVE_ACTIV
 		if(g_u8start_measurement) 
 		{
 			g_u8start_measurement = 0;
@@ -235,10 +236,12 @@ int main(void)
 			}
 			
 			//save_measurements();
-			
+			#if DATAFRAME_LOG_ACTIV
 			for (i=0; i<19; i++) {
 				uart_send_dec(i); uart_send_char('>'); uart_send_dec(g_u8data_frame[i]); uart_newline();
 			}
+			timer_delay_ms(10);
+			#endif //MAIN_LOG_ACTIV
 		}
 
 		/*
@@ -258,6 +261,7 @@ int main(void)
  * disable brown out detector - page 40 data sheet
  * disable internal voltage ref
  * disable watchdog timer
+ * if sending out data before going to sleep, consider using a few ms delay befor sleep instruction
  
  * TODO for reset:
  * save date & time to eeprom once every minute

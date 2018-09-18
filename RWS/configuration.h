@@ -84,5 +84,5 @@
 #define DATA_FRAME_SIZE	(64)
 #define DATA_FRAME_SEPARATOR (0x55)
 
-
+#define POWER_SAVE_ACTIV (1)
 #endif /* CONFIGURATION_H_ */
