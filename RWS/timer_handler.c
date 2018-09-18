@@ -178,6 +178,7 @@ ISR (TIMER2_OVF_vect)
 {
 	static uint8_t u8days;
 	//timer_sec_rtc++;  //precision increment every second
+	//uart_send_string("isr"); uart_newline();
 	timestamp.second = (timestamp.second + 1) % 60;
 	if (timestamp.second == 0) {  //1 minute passed
 		//signal reading trigger
@@ -220,8 +221,8 @@ ISR (TIMER2_OVF_vect)
 			}
 		}
 	}
-	#if TIMER_LOG_ACTIV
 	TOGGLE_STATUS_LED;
+	#if TIMER_LOG_ACTIV	
 	//uart_send_udec(timer_sec_rtc); uart_newline();
 	//uart_send_udec(timer_system_ms); uart_newline();
 	uart_send_udec(20); uart_send_udec(timestamp.year); uart_send_string("/");

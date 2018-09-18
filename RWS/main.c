@@ -11,6 +11,8 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <avr/sleep.h>
+
 #include "configuration.h"
 #include "timer_handler.h"
 #include "spi_handler.h"
@@ -54,12 +56,24 @@ void print_sensor_raw_data(struct bme280_uncomp_data *comp_data)
 	#endif // MAIN_LOG_ACTIV
 }
 
+void save_measurements(void)
+{
+	uint32_t u32address = 0;
+	u32address = (HOUR_0_ADDR + (timestamp.hour*SST25_SECTOR_SIZE) + (timestamp.minute * DATA_FRAME_SIZE));
+	//erase the chip completely only when data is sent out...
+	#if MAIN_LOG_ACTIV
+	uart_send_string("Write dataframe to: 0x"); uart_send_uhex(u32address); uart_newline();
+	#endif //MAIN_LOG_ACTIV
+	sst25_begin_write(u32address);
+	sst25_write_array(g_u8data_frame,DATA_FRAME_SIZE);
+}
+
 int main(void)
 {
 	int8_t rslt = BME280_OK;
-	struct bme280_data comp_data;
+	//struct bme280_data comp_data;
 	struct bme280_uncomp_data uncomp_data;	
-	uint8_t pu8dreturnata[5] = {0,0,0,0,0};
+	//uint8_t pu8dreturnata[5] = {0,0,0,0,0};
 	uint8_t i = 0;
 	INIT_STATUS_LED;
 	
@@ -71,6 +85,8 @@ int main(void)
 	sei();  // enable global interrupts
 
 	uart_send_string("Timer, UART & SPI Drivers initialized");	uart_newline();
+	uart_send_string("Compiled on: ");uart_send_string(__DATE__);	uart_newline();
+	uart_send_string("Compiled at: ");uart_send_string(__TIME__);	uart_newline();
 	sst25_flash_init();
 
 	/*uart_send_string("testing memory write:"); uart_newline();	
@@ -89,11 +105,6 @@ int main(void)
 	uart_send_string("read data 1: ");
 	uart_send_string(pu8dreturnata);
 	uart_newline();*/
-
-	/*uart_send_string("testing memory array write:"); uart_newline();	
-	sst25_begin_write(HOUR_1_ADDR | MINUTE_0_REL_START_ADDR);
-	sst25_write_array(pu8dreturnata,4);
-	uart_send_string("write done"); uart_newline();*/
 
 	/*uart_send_string("testing memory read 2:");
 	uart_newline();
@@ -156,8 +167,21 @@ int main(void)
 	uart_send_string("BME280 sensor setup with state: ");uart_send_dec(rslt);uart_newline();
 	#endif  //MAIN_LOG_ACTIV
 	
+	set_sleep_mode(SLEEP_MODE_PWR_SAVE);
+	//MCUCR = (1<<SM1) | (1<<SM0);
+	//sleep_mode();
+	
     while(1)
     {	
+		uart_send_char('S');
+		timer_delay_ms(10);
+		//sleep_enable(); 
+		//MCUCR = (1<<SE);
+		//sleep_cpu(); //go to sleep
+		
+		//__asm__ __volatile__ ( "sleep" "\n\t" :: );
+		sleep_mode();
+		uart_send_char('W');
 		if(g_u8start_measurement) 
 		{
 			g_u8start_measurement = 0;
@@ -210,6 +234,8 @@ int main(void)
 				g_u8data_frame[i] = 0xFF;
 			}
 			
+			//save_measurements();
+			
 			for (i=0; i<19; i++) {
 				uart_send_dec(i); uart_send_char('>'); uart_send_dec(g_u8data_frame[i]); uart_newline();
 			}
@@ -226,9 +252,14 @@ int main(void)
     }
 }
 
-void save_measurements(void)
-{
-	uint8_t u8sector_nr;
-	uint8_t u8data_frame_nr;
-	u8sector_nr = timestamp.hour;
-}
+/* TODO for minimizing power consumption:
+ * sleep in power save mode
+ * disable ADC, analog comparator
+ * disable brown out detector - page 40 data sheet
+ * disable internal voltage ref
+ * disable watchdog timer
+ 
+ * TODO for reset:
+ * save date & time to eeprom once every minute
+ * after reset or power up, read last time from eeprom
+ */

@@ -60,10 +60,9 @@
 #ifndef __SPIFLASH_H
 #define __SPIFLASH_H
 
-#define SPI_FLASH_SECTOR_SIZE		(4096ul)
-#define SPI_FLASH_PAGE_SIZE			(0ul)		// SST has no page boundary requirements
-
-#define SPI_FLASH_SECTOR_MASK		(SPI_FLASH_SECTOR_SIZE - 1)
+#define SST25_SECTOR_SIZE		(4096ul)
+#define SST25_PAGE_SIZE			(0ul)		// SST has no page boundary requirements
+#define SPI_FLASH_SECTOR_MASK	(SST25_SECTOR_SIZE - 1)
 
 void sst25_flash_init(void);		
 void sst25_read_array(uint32_t u32address, uint8_t *pu8data, uint16_t u16len);
