@@ -20,6 +20,7 @@
 #include "bme280/bme280.h"
 #include "sst25/sst25_flash_handler.h"
 #include "sst25/sst25_flash_map.h"
+#include "lis3mdl/lis3mdl.h"
 
 #define INIT_STATUS_LED		(STATUS_LED_DDR |= (1 << STATUS_LED_PIN))
 #define TOGGLE_STATUS_LED	(STATUS_LED_PORT ^= (1 << STATUS_LED_PIN))
@@ -33,7 +34,7 @@
 #define MAIN_LOG_ACTIV (0)
 #define DATAFRAME_LOG_ACTIV (1)
 
-struct bme280_dev sensor_interf;
+struct bme280_dev bme280_interf;
 
 extern volatile st_date_time timestamp; //timestamp
 extern volatile uint8_t g_u8start_measurement; //flag to trigger measurement start
@@ -132,41 +133,43 @@ int main(void)
 	
 	
 	/* Sensor_0 interface over SPI with native chip select line */
-	sensor_interf.dev_id = 0;
-	sensor_interf.intf = BME280_SPI_INTF;
-	sensor_interf.read = spi_transfer_bme280;
-	sensor_interf.write = spi_transfer_bme280;
-	sensor_interf.delay_ms = timer_delay_ms;
-	rslt = bme280_init(&sensor_interf);
+	bme280_interf.dev_id = 0;
+	bme280_interf.intf = BME280_SPI_INTF;
+	bme280_interf.read = spi_transfer_bme280;
+	bme280_interf.write = spi_transfer_bme280;
+	bme280_interf.delay_ms = timer_delay_ms;
+	rslt = bme280_init(&bme280_interf);
 		
 	#if MAIN_LOG_ACTIV
 	uart_send_string("BME280 sensor initialized with state: "); uart_send_dec(rslt); uart_newline();
 	uart_send_string("BME280 sensor calibration data: "); uart_newline();
-	uart_send_string("dig_T1 = "); uart_send_dec(sensor_interf.calib_data.dig_T1); uart_newline();
-	uart_send_string("dig_T2 = "); uart_send_dec(sensor_interf.calib_data.dig_T2); uart_newline();
-	uart_send_string("dig_T3 = "); uart_send_dec(sensor_interf.calib_data.dig_T3); uart_newline();
-	uart_send_string("dig_P1 = "); uart_send_dec(sensor_interf.calib_data.dig_P1); uart_newline();
-	uart_send_string("dig_P2 = "); uart_send_dec(sensor_interf.calib_data.dig_P2); uart_newline();
-	uart_send_string("dig_P3 = "); uart_send_dec(sensor_interf.calib_data.dig_P3); uart_newline();
-	uart_send_string("dig_P4 = "); uart_send_dec(sensor_interf.calib_data.dig_P4); uart_newline();
-	uart_send_string("dig_P5 = "); uart_send_dec(sensor_interf.calib_data.dig_P5); uart_newline();
-	uart_send_string("dig_P6 = "); uart_send_dec(sensor_interf.calib_data.dig_P6); uart_newline();
-	uart_send_string("dig_P7 = "); uart_send_dec(sensor_interf.calib_data.dig_P7); uart_newline();
-	uart_send_string("dig_P8 = "); uart_send_dec(sensor_interf.calib_data.dig_P8); uart_newline();
-	uart_send_string("dig_P9 = "); uart_send_dec(sensor_interf.calib_data.dig_P9); uart_newline();
-	uart_send_string("dig_H1 = "); uart_send_dec(sensor_interf.calib_data.dig_H1); uart_newline();
-	uart_send_string("dig_H2 = "); uart_send_dec(sensor_interf.calib_data.dig_H2); uart_newline();
-	uart_send_string("dig_H3 = "); uart_send_dec(sensor_interf.calib_data.dig_H3); uart_newline();
-	uart_send_string("dig_H4 = "); uart_send_dec(sensor_interf.calib_data.dig_H4); uart_newline();
-	uart_send_string("dig_H5 = "); uart_send_dec(sensor_interf.calib_data.dig_H5); uart_newline();
-	uart_send_string("dig_H6 = "); uart_send_dec(sensor_interf.calib_data.dig_H6); uart_newline();
-	uart_send_string("t_fine = "); uart_send_dec(sensor_interf.calib_data.t_fine); uart_newline();												
+	uart_send_string("dig_T1 = "); uart_send_dec(bme280_interf.calib_data.dig_T1); uart_newline();
+	uart_send_string("dig_T2 = "); uart_send_dec(bme280_interf.calib_data.dig_T2); uart_newline();
+	uart_send_string("dig_T3 = "); uart_send_dec(bme280_interf.calib_data.dig_T3); uart_newline();
+	uart_send_string("dig_P1 = "); uart_send_dec(bme280_interf.calib_data.dig_P1); uart_newline();
+	uart_send_string("dig_P2 = "); uart_send_dec(bme280_interf.calib_data.dig_P2); uart_newline();
+	uart_send_string("dig_P3 = "); uart_send_dec(bme280_interf.calib_data.dig_P3); uart_newline();
+	uart_send_string("dig_P4 = "); uart_send_dec(bme280_interf.calib_data.dig_P4); uart_newline();
+	uart_send_string("dig_P5 = "); uart_send_dec(bme280_interf.calib_data.dig_P5); uart_newline();
+	uart_send_string("dig_P6 = "); uart_send_dec(bme280_interf.calib_data.dig_P6); uart_newline();
+	uart_send_string("dig_P7 = "); uart_send_dec(bme280_interf.calib_data.dig_P7); uart_newline();
+	uart_send_string("dig_P8 = "); uart_send_dec(bme280_interf.calib_data.dig_P8); uart_newline();
+	uart_send_string("dig_P9 = "); uart_send_dec(bme280_interf.calib_data.dig_P9); uart_newline();
+	uart_send_string("dig_H1 = "); uart_send_dec(bme280_interf.calib_data.dig_H1); uart_newline();
+	uart_send_string("dig_H2 = "); uart_send_dec(bme280_interf.calib_data.dig_H2); uart_newline();
+	uart_send_string("dig_H3 = "); uart_send_dec(bme280_interf.calib_data.dig_H3); uart_newline();
+	uart_send_string("dig_H4 = "); uart_send_dec(bme280_interf.calib_data.dig_H4); uart_newline();
+	uart_send_string("dig_H5 = "); uart_send_dec(bme280_interf.calib_data.dig_H5); uart_newline();
+	uart_send_string("dig_H6 = "); uart_send_dec(bme280_interf.calib_data.dig_H6); uart_newline();
+	uart_send_string("t_fine = "); uart_send_dec(bme280_interf.calib_data.t_fine); uart_newline();												
 	#endif  //MAIN_LOG_ACTIV
 	
-	rslt = bme280_setup_weather_monitoring_meas(&sensor_interf);
+	rslt = bme280_setup_weather_monitoring_meas(&bme280_interf);
 	#if MAIN_LOG_ACTIV
 	uart_send_string("BME280 sensor setup with state: ");uart_send_dec(rslt);uart_newline();
 	#endif  //MAIN_LOG_ACTIV
+	
+	uart_send_dec(get_id());
 	
 	#if POWER_SAVE_ACTIV
 	set_sleep_mode(SLEEP_MODE_PWR_SAVE);
@@ -199,14 +202,14 @@ int main(void)
 			uart_newline();
 			#endif //MAIN_LOG_ACTIV
 			
-			rslt = bme280_set_sensor_mode(BME280_FORCED_MODE, &sensor_interf);  //trigger forced measurement
-			sensor_interf.delay_ms(40);  //delay needed for measurement to complete
+			rslt = bme280_set_sensor_mode(BME280_FORCED_MODE, &bme280_interf);  //trigger forced measurement
+			bme280_interf.delay_ms(40);  //delay needed for measurement to complete
 			#if MAIN_LOG_ACTIV
 			uart_send_string("BME280 sensor force mode trigger with state: ");uart_send_dec(rslt);uart_newline();
 			#endif  //MAIN_LOG_ACTIV
 			
 			
-			rslt = bme280_get_raw_sensor_data(BME280_ALL, &uncomp_data, &sensor_interf);
+			rslt = bme280_get_raw_sensor_data(BME280_ALL, &uncomp_data, &bme280_interf);
 			print_sensor_raw_data(&uncomp_data);
 			#if MAIN_LOG_ACTIV
 			uart_send_string("BME280 sensor RAW read with state: ");uart_send_dec(rslt);uart_newline();
@@ -245,7 +248,7 @@ int main(void)
 		}
 
 		/*
-		rslt = bme280_get_sensor_data(BME280_ALL, &comp_data, &sensor_interf);
+		rslt = bme280_get_sensor_data(BME280_ALL, &comp_data, &bme280_interf);
 		print_sensor_data(&comp_data);
 		#if MAIN_LOG_ACTIV
 		uart_send_string("BME280 sensor read with state: ");uart_send_dec(rslt);uart_newline();
