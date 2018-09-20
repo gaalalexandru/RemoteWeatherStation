@@ -135,8 +135,8 @@ int main(void)
 	/* Sensor_0 interface over SPI with native chip select line */
 	bme280_interf.dev_id = 0;
 	bme280_interf.intf = BME280_SPI_INTF;
-	bme280_interf.read = spi_transfer_bme280;
-	bme280_interf.write = spi_transfer_bme280;
+	bme280_interf.read = spi_transfer_sensors;
+	bme280_interf.write = spi_transfer_sensors;
 	bme280_interf.delay_ms = timer_delay_ms;
 	rslt = bme280_init(&bme280_interf);
 		
@@ -169,7 +169,9 @@ int main(void)
 	uart_send_string("BME280 sensor setup with state: ");uart_send_dec(rslt);uart_newline();
 	#endif  //MAIN_LOG_ACTIV
 	
-	uart_send_dec(get_id());
+	//uart_send_dec(get_id());
+	lis3mdl_init();
+	timer_delay_ms(10);
 	
 	#if POWER_SAVE_ACTIV
 	set_sleep_mode(SLEEP_MODE_PWR_SAVE);

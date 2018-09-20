@@ -9,6 +9,7 @@
 #ifndef LIS3MDL_H_
 #define LIS3MDL_H_
 
-uint8_t get_id(void);
+//uint8_t get_id(void);
+void lis3mdl_init(void);
 
 #endif /* LIS3MDL_H_ */

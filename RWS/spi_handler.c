@@ -78,18 +78,29 @@ uint8_t spi_transfer_generic(uint8_t u8data)
 * @param len		: Length of the array of data
 * @return	Zero for success, non-zero otherwise
 */
-int8_t spi_transfer_bme280(uint8_t dev_id, uint8_t reg_addr, uint8_t *reg_data, uint16_t len)
+void spi_transfer_sensors(uint8_t dev_id, uint8_t reg_addr, uint8_t *reg_data, uint16_t len)
 {
-	int8_t rslt = 0; /* Return 0 for Success, non-zero for failure */
 	//select which Chip Select pin has	to be set low to activate the relevant device on the SPI bus
 	if(dev_id == bme280) CLEAR_CS_PIN(CS_BME280_PORT,CS_BME280_PIN);
+	else if(dev_id == lis3mdl) CLEAR_CS_PIN(CS_LIS3MDL_PORT,CS_LIS3MDL_PIN);
 	spi_transfer_generic(reg_addr); // Write the register address, ignore the return
-	for (uint16_t i = 0; i < len; i++)
+	
+	for (uint8_t i = 0; i < len; i++)
 	{
-		reg_data[i] = spi_transfer_generic(reg_data[i]);
+		//in case of using lis3mdl, check bit6 of the reg address, only if this is set,
+		//than the read / write register address is automatically incremented,
+		//multiple byte read / write operations are possible, otherwise only 1 byte is read / write		
+		if((dev_id == lis3mdl) && (reg_addr & (1<<6) == 0))
+		{
+			*reg_data = spi_transfer_generic(*reg_data);
+			SET_CS_PIN(CS_LIS3MDL_PORT,CS_LIS3MDL_PIN);
+			break;
+		}
+		reg_data[i] = spi_transfer_generic(reg_data[i]);  //write / read register content
 	}
+	
 	if(dev_id == bme280) SET_CS_PIN(CS_BME280_PORT,CS_BME280_PIN);
-	return rslt;
+	else if(dev_id == lis3mdl) SET_CS_PIN(CS_LIS3MDL_PORT,CS_LIS3MDL_PIN);
 }
 
 /* In BME280 Write Scenario 
@@ -119,6 +130,27 @@ int8_t spi_transfer_bme280(uint8_t dev_id, uint8_t reg_addr, uint8_t *reg_data, 
  * | (don't care)   | (don't care)        | HIGH        |
  * |----------------+---------------------|-------------|
  */
+
+#if 0
+void spi_transfer_lis3mdl(uint8_t dev_id, uint8_t reg_addr, uint8_t *reg_data, uint16_t len)
+{
+//select which Chip Select pin has	to be set low to activate the relevant device on the SPI bus
+if(dev_id == lis3mdl) CLEAR_CS_PIN(CS_LIS3MDL_PORT,CS_LIS3MDL_PIN);
+
+spi_transfer_generic(reg_addr); // Write the register address, ignore the return
+
+if((reg_addr & (1<<6)) && (len > 1)) {  //address auto increment set on bit6, multiple byte transfer
+	for (uint8_t i = 0; i < len; i++)
+	{
+		reg_data[i] = spi_transfer_generic(reg_data[i]);
+	}
+} else {  //single byte transfer
+	
+}
+
+if(dev_id == lis3mdl) SET_CS_PIN(CS_LIS3MDL_PORT,CS_LIS3MDL_PIN);
+}
+#endif
 
 /************************************************************************/
 /*                      Other Function definitions                      */
