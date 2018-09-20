@@ -89,3 +89,16 @@ void lis3mdl_init(void) {
 	
 	get_id(LIS3MDL_MANUF_ID);
 }
+
+void lis3mdl_read_meas(uint8_t) {
+//}
+//uint8_t lis3mdl_data_ready(void) {
+	uint8_t u8data = 0;
+	uint8_t retry_count = 10;
+	uint8_t lis3mdl_meas[8] = {0,0,0,0,0,0,0,0};
+	do {
+		spi_transfer_sensors(LIS3MDL_SPI_DEV_ID,(READ_OP|ADDR_CONST|STATUS_REG), &u8data, 1);	
+	} while ((u8data & (1<<ZYXDA) == 0) && (retry_count--);
+	spi_transfer_sensors(LIS3MDL_SPI_DEV_ID,(READ_OP|ADDR_INCR|OUT_X_H), &lis3mdl_meas, 8);
+	
+}
