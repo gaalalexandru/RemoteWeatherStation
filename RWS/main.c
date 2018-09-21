@@ -33,6 +33,8 @@
 
 #define MAIN_LOG_ACTIV (0)
 #define DATAFRAME_LOG_ACTIV (1)
+#define PRINT_BME280_PROCESSED_OUTPUT (0)
+#define PRINT_LIS3MDL_PROCESSED_OUTPUT (1)
 
 struct bme280_dev bme280_interf;
 
@@ -40,22 +42,32 @@ extern volatile st_date_time timestamp; //timestamp
 extern volatile uint8_t g_u8start_measurement; //flag to trigger measurement start
 uint8_t g_u8data_frame[DATA_FRAME_SIZE];
 
-void print_sensor_data(struct bme280_data *comp_data)
+void print_bme280_data(struct bme280_data *comp_data)
 {
-	#if MAIN_LOG_ACTIV
 	uart_send_string("Temperature: ");	uart_send_udec(comp_data->temperature);	uart_newline();
 	uart_send_string("Pressure: ");	uart_send_udec(comp_data->pressure);uart_newline();
 	uart_send_string("Humidity: ");	uart_send_udec(comp_data->humidity);uart_newline();
-	#endif // MAIN_LOG_ACTIV
 }
 
-void print_sensor_raw_data(struct bme280_uncomp_data *comp_data)
+void print_bme280_raw_data(struct bme280_uncomp_data *comp_data)
 {
-	#if MAIN_LOG_ACTIV
 	uart_send_string("RAW Temperature: ");	uart_send_udec(comp_data->temperature);	uart_newline();
 	uart_send_string("RAW Pressure: ");	uart_send_udec(comp_data->pressure);uart_newline();
 	uart_send_string("RAW Humidity: ");	uart_send_udec(comp_data->humidity);uart_newline();
-	#endif // MAIN_LOG_ACTIV
+}
+
+void print_lis3mdl_data(lis3mdl_data_st *stprint_data)
+{
+	/*
+	uart_send_string("X Magnetic Field: ");	uart_send_dec(stprint_data->x_mag); uart_newline();
+	uart_send_string("Y Magnetic Field: ");	uart_send_dec(stprint_data->y_mag); uart_newline();
+	uart_send_string("Z Magnetic Field: ");	uart_send_dec(stprint_data->z_mag); uart_newline();
+	uart_send_string("Temperature: ");	uart_send_dec(stprint_data->temperature); uart_newline();
+	*/
+	uart_send_dec(stprint_data->x_mag);uart_send_string("    ");
+	uart_send_dec(stprint_data->y_mag);uart_send_string("    ");
+	uart_send_dec(stprint_data->z_mag);uart_send_string("    ");
+	uart_send_dec(stprint_data->temperature); uart_newline();
 }
 
 void save_measurements(void)
@@ -73,10 +85,13 @@ void save_measurements(void)
 int main(void)
 {
 	int8_t rslt = BME280_OK;
-	//struct bme280_data comp_data;
 	struct bme280_uncomp_data uncomp_data;	
-	//uint8_t pu8dreturnata[5] = {0,0,0,0,0};
+	#if PRINT_BME280_PROCESSED_OUTPUT
+	struct bme280_data comp_data;
+	#endif
+	uint8_t u8lis3mdl_data[8] = {0,0,0,0,0,0,0,0};
 	uint8_t i = 0;
+	lis3mdl_data_st lis3mdl_print_data;
 	INIT_STATUS_LED;
 	
 	cli();  //Disable interrupts
@@ -188,6 +203,14 @@ int main(void)
 				uart_send_char('W');
 			#endif  //MAIN_LOG_ACTIV
 		#endif //POWER_SAVE_ACTIV
+		
+		lis3mdl_single_meas();
+		i = lis3mdl_read_meas(u8lis3mdl_data);
+		lis3mdl_idle();
+		lis3mdl_process_meas(u8lis3mdl_data, &lis3mdl_print_data);
+		print_lis3mdl_data(&lis3mdl_print_data);
+		timer_delay_ms(10);
+		
 		if(g_u8start_measurement) 
 		{
 			g_u8start_measurement = 0;
@@ -204,18 +227,27 @@ int main(void)
 			uart_newline();
 			#endif //MAIN_LOG_ACTIV
 			
+			lis3mdl_single_meas();
+						
 			rslt = bme280_set_sensor_mode(BME280_FORCED_MODE, &bme280_interf);  //trigger forced measurement
 			bme280_interf.delay_ms(40);  //delay needed for measurement to complete
 			#if MAIN_LOG_ACTIV
 			uart_send_string("BME280 sensor force mode trigger with state: ");uart_send_dec(rslt);uart_newline();
 			#endif  //MAIN_LOG_ACTIV
 			
-			
 			rslt = bme280_get_raw_sensor_data(BME280_ALL, &uncomp_data, &bme280_interf);
-			print_sensor_raw_data(&uncomp_data);
+			
 			#if MAIN_LOG_ACTIV
 			uart_send_string("BME280 sensor RAW read with state: ");uart_send_dec(rslt);uart_newline();
+			print_bme280_raw_data(&uncomp_data);
 			#endif  //MAIN_LOG_ACTIV
+			
+			i = lis3mdl_read_meas(u8lis3mdl_data);
+			uart_send_string("lis3mdl read state: "); uart_send_char(0x30 + i); uart_newline();
+			lis3mdl_idle();
+			lis3mdl_process_meas(u8lis3mdl_data, &lis3mdl_print_data);
+			print_lis3mdl_data(&lis3mdl_print_data);
+			timer_delay_ms(10);
 			
 			g_u8data_frame[0] = DATA_FRAME_SEPARATOR;
 			g_u8data_frame[1] = timestamp.year;
@@ -236,26 +268,43 @@ int main(void)
 			g_u8data_frame[16] = (uint8_t)((uncomp_data.humidity>>8) & 0xFF);
 			g_u8data_frame[17] = (uint8_t)(uncomp_data.humidity & 0xFF);
 			g_u8data_frame[18] = DATA_FRAME_SEPARATOR;
-			for (i=19; i<DATA_FRAME_SIZE; i++) {
+			for (i=19; i<36; i++) {
 				g_u8data_frame[i] = 0xFF;
 			}
-			
+			g_u8data_frame[36] = DATA_FRAME_SEPARATOR;
+			g_u8data_frame[37] = u8lis3mdl_data[0];
+			g_u8data_frame[38] = u8lis3mdl_data[1];
+			g_u8data_frame[39] = u8lis3mdl_data[2];
+			g_u8data_frame[40] = u8lis3mdl_data[3];
+			g_u8data_frame[41] = u8lis3mdl_data[4];
+			g_u8data_frame[42] = u8lis3mdl_data[5];
+			g_u8data_frame[43] = DATA_FRAME_SEPARATOR;
+			//temperature LSB and MSB byte orders cannot be swapped, so swap here
+			g_u8data_frame[44] = u8lis3mdl_data[6];
+			g_u8data_frame[45] = u8lis3mdl_data[7];
+			g_u8data_frame[46] = DATA_FRAME_SEPARATOR;
+			for (i=47; i<DATA_FRAME_SIZE; i++) {
+				g_u8data_frame[i] = 0xFF;
+			}
 			//save_measurements();
 			#if DATAFRAME_LOG_ACTIV
 			for (i=0; i<19; i++) {
 				uart_send_dec(i); uart_send_char('>'); uart_send_dec(g_u8data_frame[i]); uart_newline();
 			}
+			uart_newline();
+			for (i=36; i<46; i++) {
+				uart_send_dec(i); uart_send_char('>'); uart_send_dec(g_u8data_frame[i]); uart_newline();
+			}
+			uart_newline();
 			timer_delay_ms(10);
-			#endif //MAIN_LOG_ACTIV
+			#endif //DATAFRAME_LOG_ACTIV
 		}
 
-		/*
+		#if PRINT_BME280_PROCESSED_OUTPUT
 		rslt = bme280_get_sensor_data(BME280_ALL, &comp_data, &bme280_interf);
-		print_sensor_data(&comp_data);
-		#if MAIN_LOG_ACTIV
+		print_bme280_data(&comp_data);
 		uart_send_string("BME280 sensor read with state: ");uart_send_dec(rslt);uart_newline();
-		#endif  //MAIN_LOG_ACTIV
-		*/
+		#endif //PRINT_BME280_OUTPUT
 	
     }
 }

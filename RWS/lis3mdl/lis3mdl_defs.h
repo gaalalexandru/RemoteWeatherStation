@@ -62,7 +62,7 @@
 //CTRL_REG4 0x23 register masks
 #define OMZ1	(3)		//0 - Low-power mode
 #define	OMZ0	(2)		//0
-#define BLE		(1)		//0 - data LSb at lower address
+#define BLE		(1)		//1 - data MSB at lower address (swapped if you look at the register map in the data sheet)
 //CTRL_REG5 0x24 register masks
 #define FAST_READ (7)	//0
 #define BDU		(6)		//10 ???

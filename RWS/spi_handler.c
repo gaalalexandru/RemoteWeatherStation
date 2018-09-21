@@ -83,6 +83,7 @@ void spi_transfer_sensors(uint8_t dev_id, uint8_t reg_addr, uint8_t *reg_data, u
 	//select which Chip Select pin has	to be set low to activate the relevant device on the SPI bus
 	if(dev_id == bme280) CLEAR_CS_PIN(CS_BME280_PORT,CS_BME280_PIN);
 	else if(dev_id == lis3mdl) CLEAR_CS_PIN(CS_LIS3MDL_PORT,CS_LIS3MDL_PIN);
+	
 	spi_transfer_generic(reg_addr); // Write the register address, ignore the return
 	
 	for (uint8_t i = 0; i < len; i++)
@@ -90,7 +91,7 @@ void spi_transfer_sensors(uint8_t dev_id, uint8_t reg_addr, uint8_t *reg_data, u
 		//in case of using lis3mdl, check bit6 of the reg address, only if this is set,
 		//than the read / write register address is automatically incremented,
 		//multiple byte read / write operations are possible, otherwise only 1 byte is read / write		
-		if((dev_id == lis3mdl) && (reg_addr & (1<<6) == 0))
+		if((dev_id == lis3mdl) && ((reg_addr & (1<<6)) == 0))
 		{
 			*reg_data = spi_transfer_generic(*reg_data);
 			SET_CS_PIN(CS_LIS3MDL_PORT,CS_LIS3MDL_PIN);
