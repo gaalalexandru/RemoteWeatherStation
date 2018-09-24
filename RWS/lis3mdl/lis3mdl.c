@@ -142,5 +142,5 @@ static int16_t convert_2complement(uint16_t u16complement) {
 		u16complement = ((u16complement & (1 << i))?(u16complement & (~(1 << i))):(u16complement | (1 << i)));
 	}
 	
-	return (int16_t)((int16_t)i8sign * u16complement);
+	return (int16_t)((int16_t)i8sign * (u16complement + 1));
 }
