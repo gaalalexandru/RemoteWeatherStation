@@ -64,9 +64,9 @@ void print_lis3mdl_data(lis3mdl_data_st *stprint_data)
 	uart_send_string("Z Magnetic Field: ");	uart_send_dec(stprint_data->z_mag); uart_newline();
 	uart_send_string("Temperature: ");	uart_send_dec(stprint_data->temperature); uart_newline();
 	*/
-	uart_send_dec(stprint_data->x_mag);uart_send_string("    ");
-	uart_send_dec(stprint_data->y_mag);uart_send_string("    ");
-	uart_send_dec(stprint_data->z_mag);uart_send_string("    ");
+	uart_send_dec(stprint_data->x_mag);uart_send_string("   ");
+	uart_send_dec(stprint_data->y_mag);uart_send_string("   ");
+	uart_send_dec(stprint_data->z_mag);uart_send_string("   ");
 	uart_send_dec(stprint_data->temperature); uart_newline();
 }
 
@@ -191,6 +191,15 @@ int main(void)
 	#if POWER_SAVE_ACTIV
 	set_sleep_mode(SLEEP_MODE_PWR_SAVE);
 	#endif //POWER_SAVE_ACTIV
+	
+	uart_send_string("testing conversion from 2s complement:"); uart_newline();
+	uart_send_udec(60643); uart_send_char('='); uart_send_dec(convert_2complement(60643)); uart_newline();  //expected: -4893
+	uart_send_udec(27875); uart_send_char('='); uart_send_dec(convert_2complement(27875)); uart_newline();  //expected: 27875
+	uart_send_udec(40163); uart_send_char('='); uart_send_dec(convert_2complement(40163)); uart_newline();  //expected: -25373
+	uart_send_udec(7406); uart_send_char('='); uart_send_dec(convert_2complement(7406)); uart_newline();  //expected: 7406
+	uart_send_udec(62190); uart_send_char('='); uart_send_dec(convert_2complement(62190)); uart_newline();  //expected: -3346
+	timer_delay_ms(100);
+	
     while(1)
     {	
 		#if POWER_SAVE_ACTIV
@@ -207,16 +216,11 @@ int main(void)
 		lis3mdl_single_meas();
 		i = lis3mdl_read_meas(u8lis3mdl_data);
 		lis3mdl_idle();
-		//lis3mdl_process_meas(u8lis3mdl_data, &lis3mdl_print_data);
-		//print_lis3mdl_data(&lis3mdl_print_data);
+		lis3mdl_process_meas(u8lis3mdl_data, &lis3mdl_print_data);
+		print_lis3mdl_data(&lis3mdl_print_data);
 		
 		
-		//uart_send_string("testing conversion from 2s complement:"); uart_newline();
-		//uart_send_udec(60643); uart_send_char('='); uart_send_dec(convert_2complement(60643)); uart_newline();  //expected: -4893
-		//uart_send_udec(27875); uart_send_char('='); uart_send_dec(convert_2complement(27875)); uart_newline();  //expected: 27875
-		//uart_send_udec(40163); uart_send_char('='); uart_send_dec(convert_2complement(40163)); uart_newline();  //expected: -25373
-		//uart_send_udec(7406); uart_send_char('='); uart_send_dec(convert_2complement(7406)); uart_newline();  //expected: 7406
-		//uart_send_udec(62190); uart_send_char('='); uart_send_dec(convert_2complement(62190)); uart_newline();  //expected: -3346
+
 		
 		timer_delay_ms(10);
 		

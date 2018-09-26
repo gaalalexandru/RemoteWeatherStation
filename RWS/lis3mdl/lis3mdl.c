@@ -44,7 +44,7 @@ struct lis3mdl_dev_s
 };
 #endif
 
-static int16_t convert_2complement(uint16_t u16complement);
+//static int16_t convert_2complement(uint16_t u16complement);
 
 static uint8_t get_id(const uint8_t u8expected_id) {
 	uint8_t u8id = 0;
@@ -76,8 +76,8 @@ uint8_t lis3mdl_init(void) {
 	//u8data = 0; //OM = low power Z axis, LSB of data on lower register address
 	spi_transfer_sensors(LIS3MDL_SPI_DEV_ID,(WRITE_OP|ADDR_CONST|CTRL_REG4), &u8data, 1);
 	
-	u8data = (1 << FS0);  //full scale selection ±8 gauss
-	//u8data = 0;  //full scale selection ±4 gauss
+	//u8data = (1 << FS0);  //full scale selection ±8 gauss
+	u8data = 0;  //full scale selection ±4 gauss
 	spi_transfer_sensors(LIS3MDL_SPI_DEV_ID,(WRITE_OP|ADDR_CONST|CTRL_REG2), &u8data, 1);
 	
 	u8data = (1<<BDU);  //not fast read, block data update until is read out
@@ -133,7 +133,7 @@ void lis3mdl_process_meas(const uint8_t *pu8read_data, lis3mdl_data_st *stproces
 	stprocessed_data->temperature = convert_2complement(u16workint);
 }
 
-static int16_t convert_2complement(uint16_t u16complement) {
+/*static*/ int16_t convert_2complement(uint16_t u16complement) {
 	uint8_t i;
 	int8_t i8sign = 1;
 	
