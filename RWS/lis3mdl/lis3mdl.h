@@ -22,6 +22,6 @@ uint8_t lis3mdl_read_meas(uint8_t *pu8read_data);
 void lis3mdl_process_meas(const uint8_t *pu8read_data, lis3mdl_data_st *stprocessed_data);
 void lis3mdl_single_meas(void);
 void lis3mdl_idle(void);
-int16_t convert_2complement(uint16_t u16complement);
+
 
 #endif /* LIS3MDL_H_ */

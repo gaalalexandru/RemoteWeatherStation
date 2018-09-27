@@ -21,6 +21,7 @@
 #include "sst25/sst25_flash_handler.h"
 #include "sst25/sst25_flash_map.h"
 #include "lis3mdl/lis3mdl.h"
+#include "auxiliary/auxiliary_functions.h"
 
 #define INIT_STATUS_LED		(STATUS_LED_DDR |= (1 << STATUS_LED_PIN))
 #define TOGGLE_STATUS_LED	(STATUS_LED_PORT ^= (1 << STATUS_LED_PIN))
@@ -34,7 +35,7 @@
 #define MAIN_LOG_ACTIV (0)
 #define DATAFRAME_LOG_ACTIV (1)
 #define PRINT_BME280_PROCESSED_OUTPUT (0)
-#define PRINT_LIS3MDL_PROCESSED_OUTPUT (1)
+#define PRINT_LIS3MDL_PROCESSED_OUTPUT (0)
 
 struct bme280_dev bme280_interf;
 
@@ -58,12 +59,6 @@ void print_bme280_raw_data(struct bme280_uncomp_data *comp_data)
 
 void print_lis3mdl_data(lis3mdl_data_st *stprint_data)
 {
-	/*
-	uart_send_string("X Magnetic Field: ");	uart_send_dec(stprint_data->x_mag); uart_newline();
-	uart_send_string("Y Magnetic Field: ");	uart_send_dec(stprint_data->y_mag); uart_newline();
-	uart_send_string("Z Magnetic Field: ");	uart_send_dec(stprint_data->z_mag); uart_newline();
-	uart_send_string("Temperature: ");	uart_send_dec(stprint_data->temperature); uart_newline();
-	*/
 	uart_send_dec(stprint_data->x_mag);uart_send_string("   ");
 	uart_send_dec(stprint_data->y_mag);uart_send_string("   ");
 	uart_send_dec(stprint_data->z_mag);uart_send_string("   ");
@@ -191,14 +186,16 @@ int main(void)
 	#if POWER_SAVE_ACTIV
 	set_sleep_mode(SLEEP_MODE_PWR_SAVE);
 	#endif //POWER_SAVE_ACTIV
-	
+
+#ifdef MAIN_TEST_2COMPLEMENT_CONVERSION	
 	uart_send_string("testing conversion from 2s complement:"); uart_newline();
-	uart_send_udec(60643); uart_send_char('='); uart_send_dec(convert_2complement(60643)); uart_newline();  //expected: -4893
-	uart_send_udec(27875); uart_send_char('='); uart_send_dec(convert_2complement(27875)); uart_newline();  //expected: 27875
-	uart_send_udec(40163); uart_send_char('='); uart_send_dec(convert_2complement(40163)); uart_newline();  //expected: -25373
-	uart_send_udec(7406); uart_send_char('='); uart_send_dec(convert_2complement(7406)); uart_newline();  //expected: 7406
-	uart_send_udec(62190); uart_send_char('='); uart_send_dec(convert_2complement(62190)); uart_newline();  //expected: -3346
+	uart_send_udec(60643); uart_send_char('='); uart_send_dec(conv_2compl_to_signed_dec(60643,16)); uart_newline();  //expected: -4893
+	uart_send_udec(27875); uart_send_char('='); uart_send_dec(conv_2compl_to_signed_dec(27875,16)); uart_newline();  //expected: 27875
+	uart_send_udec(40163); uart_send_char('='); uart_send_dec(conv_2compl_to_signed_dec(40163,16)); uart_newline();  //expected: -25373
+	uart_send_udec(7406); uart_send_char('='); uart_send_dec(conv_2compl_to_signed_dec(7406,16)); uart_newline();  //expected: 7406
+	uart_send_udec(62190); uart_send_char('='); uart_send_dec(conv_2compl_to_signed_dec(62190,16)); uart_newline();  //expected: -3346
 	timer_delay_ms(100);
+#endif //MAIN_TEST_2COMPLEMENT_CONVERSION
 	
     while(1)
     {	
@@ -213,16 +210,15 @@ int main(void)
 			#endif  //MAIN_LOG_ACTIV
 		#endif //POWER_SAVE_ACTIV
 		
+		#if 1
 		lis3mdl_single_meas();
 		i = lis3mdl_read_meas(u8lis3mdl_data);
 		lis3mdl_idle();
 		lis3mdl_process_meas(u8lis3mdl_data, &lis3mdl_print_data);
 		print_lis3mdl_data(&lis3mdl_print_data);
-		
-		
-
-		
 		timer_delay_ms(10);
+		#endif
+		
 		
 		if(g_u8start_measurement) 
 		{
@@ -256,11 +252,10 @@ int main(void)
 			#endif  //MAIN_LOG_ACTIV
 			
 			i = lis3mdl_read_meas(u8lis3mdl_data);
+			#if MAIN_LOG_ACTIV
 			uart_send_string("lis3mdl read state: "); uart_send_char(0x30 + i); uart_newline();
+			#endif  //MAIN_LOG_ACTIV
 			lis3mdl_idle();
-			lis3mdl_process_meas(u8lis3mdl_data, &lis3mdl_print_data);
-			print_lis3mdl_data(&lis3mdl_print_data);
-			timer_delay_ms(10);
 			
 			g_u8data_frame[0] = DATA_FRAME_SEPARATOR;
 			g_u8data_frame[1] = timestamp.year;
@@ -319,6 +314,11 @@ int main(void)
 		uart_send_string("BME280 sensor read with state: ");uart_send_dec(rslt);uart_newline();
 		#endif //PRINT_BME280_OUTPUT
 	
+		#if PRINT_LIS3MDL_PROCESSED_OUTPUT
+		lis3mdl_process_meas(u8lis3mdl_data, &lis3mdl_print_data);
+		print_lis3mdl_data(&lis3mdl_print_data);
+		timer_delay_ms(10);
+		#endif //PRINT_LIS3MDL_PROCESSED_OUTPUT
     }
 }
 

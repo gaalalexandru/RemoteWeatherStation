@@ -15,36 +15,14 @@
 #include "../spi_handler.h"
 #include "lis3mdl.h"
 #include "lis3mdl_defs.h"
+#include "../auxiliary/auxiliary_functions.h"
 
 #if LIS3MDL_LOG_ACTIV
 #include "../uart_handler.h"
 #endif //SST25_LOG_ACTIV
 
-/**\name Macro to combine two 8 bit data's to form a 16 bit data */
-#define CONCAT_BYTES(msb, lsb)     (((uint16_t)msb << 8) | (uint16_t)lsb)
 #define LIS3MDL_SPI_DEV_ID	(1)
-
-
-
-#if 0
-struct lis3mdl_dev_s
-{
-  struct lis3mdl_dev_s *flink;     /* Supports a singly linked list of
-                                        * drivers */
-  struct spi_dev_s *spi;           /* Pointer to the SPI instance */
-  struct lis3mdl_config_s *config; /* Pointer to the configuration
-                                        * of the LIS3MDL sensor */
-  uint8_t/*sem_t*/ datasem;                       /* Manages exclusive access to this
-                                        * structure */
-  struct lis3mdl_sensor_data_s data;   /* The data as measured by the sensor */
-  struct work_s work;                  /* The work queue is responsible for
-                                        * retrieving the data from the
-                                        * sensor after the arrival of new
-                                        * data was signaled in an interrupt */
-};
-#endif
-
-//static int16_t convert_2complement(uint16_t u16complement);
+#define LIS3MDL_FULL_SCALE	(8)
 
 static uint8_t get_id(const uint8_t u8expected_id) {
 	uint8_t u8id = 0;
@@ -68,8 +46,11 @@ static uint8_t get_id(const uint8_t u8expected_id) {
 uint8_t lis3mdl_init(void) {
 	uint8_t u8data = 0;
 
-	//u8data = (1 << TEMP_EN) | (1 << DO2) | (1 << DO1) | (1 << DO0);  //temp meas enabled, OM = low power mode, DO = output data rate 80 Hz
+	#if (LIS3MDL_FULL_SCALE == 4)
+	u8data = (1 << TEMP_EN) | (1 << DO2) | (1 << DO1) | (1 << DO0);  //temp meas enabled, OM = low power mode, DO = output data rate 80 Hz
+	#elif (LIS3MDL_FULL_SCALE == 8)
 	u8data = (1 << TEMP_EN);  //temp meas enabled, OM = low power mode, DO = output data rate 0.625 Hz
+	#endif
 	spi_transfer_sensors(LIS3MDL_SPI_DEV_ID,(WRITE_OP|ADDR_CONST|CTRL_REG1), &u8data, 1);
 
 	u8data = (1 << BLE);  //OM = low power Z axis, MSB of data on lower register address
@@ -112,37 +93,55 @@ void lis3mdl_idle(void) {
 
 void lis3mdl_process_meas(const uint8_t *pu8read_data, lis3mdl_data_st *stprocessed_data) {
 	uint16_t u16workint = 0;
+	int32_t i32workint = 0;
+	uint16_t u16gain = 0;
+	uint8_t u8fullscale = LIS3MDL_FULL_SCALE;
+	
+	switch (u8fullscale) {
+		case 4:
+			u16gain = 6842;
+		break;
+		case 8:
+			u16gain = 3421;
+		break;
+		case 12:
+			u16gain = 2281;
+		break;
+		case 16:
+			u16gain = 1711;
+		break;
+	}
+	
+	
 	//process X magnetic data
-	u16workint = (uint16_t)CONCAT_BYTES(pu8read_data[0], pu8read_data[1]);
-	//u16workint = (uint16_t)CONCAT_BYTES(pu8read_data[1], pu8read_data[0]);  //use this if BLE bit is cleared
-	stprocessed_data->x_mag = convert_2complement(u16workint);
+	//u16workint = (uint16_t)CONCAT_BYTES(pu8read_data[0], pu8read_data[1]);
+	u16workint = (uint16_t)CONCAT_BYTES(pu8read_data[1], pu8read_data[0]);  //use this if BLE bit is cleared
+	//stprocessed_data->x_mag = conv_2compl_to_signed_dec(u16workint,16);
+	i32workint = conv_2compl_to_signed_dec(u16workint,16);
+	i32workint = (1000 * i32workint) / u16gain;
+	stprocessed_data->x_mag = (int16_t)i32workint;
 	
 	//process Y magnetic data
-	u16workint = (uint16_t)CONCAT_BYTES(pu8read_data[2], pu8read_data[3]);
-	//u16workint = (uint16_t)CONCAT_BYTES(pu8read_data[3], pu8read_data[2]);  //use this if BLE bit is cleared
-	stprocessed_data->y_mag = convert_2complement(u16workint);	
+	//u16workint = (uint16_t)CONCAT_BYTES(pu8read_data[2], pu8read_data[3]);
+	u16workint = (uint16_t)CONCAT_BYTES(pu8read_data[3], pu8read_data[2]);  //use this if BLE bit is cleared
+	//stprocessed_data->y_mag = conv_2compl_to_signed_dec(u16workint,16);
+	i32workint = conv_2compl_to_signed_dec(u16workint,16);
+	i32workint = (1000 * i32workint) / u16gain;
+	stprocessed_data->y_mag = (int16_t)i32workint;
 
 	//process Z magnetic data
-	u16workint = (uint16_t)CONCAT_BYTES(pu8read_data[4], pu8read_data[5]);
-	//u16workint = (uint16_t)CONCAT_BYTES(pu8read_data[5], pu8read_data[4]);  //use this if BLE bit is cleared
-	stprocessed_data->z_mag = convert_2complement(u16workint);	
+	//u16workint = (uint16_t)CONCAT_BYTES(pu8read_data[4], pu8read_data[5]);
+	u16workint = (uint16_t)CONCAT_BYTES(pu8read_data[5], pu8read_data[4]);  //use this if BLE bit is cleared
+	//stprocessed_data->z_mag = conv_2compl_to_signed_dec(u16workint,16);	
+	i32workint = conv_2compl_to_signed_dec(u16workint,16);
+	i32workint = (1000 * i32workint) / u16gain;
+	stprocessed_data->z_mag = (int16_t)i32workint;
 
 	//process Temp data
-	u16workint = (uint16_t)CONCAT_BYTES(pu8read_data[6], pu8read_data[7]);
-	//u16workint = (uint16_t)CONCAT_BYTES(pu8read_data[7], pu8read_data[6]);  //use this if BLE bit is cleared
-	stprocessed_data->temperature = convert_2complement(u16workint);
-}
-
-/*static*/ int16_t convert_2complement(uint16_t u16complement) {
-	uint8_t i;
-	int8_t i8sign = 1;
-	
-	if(u16complement & (1 << 15)) {
-		i8sign = -1;
-	}
-	for(i=0;i<16;i++) {
-		u16complement = ((u16complement & (1 << i))?(u16complement & (~(1 << i))):(u16complement | (1 << i)));
-	}
-	
-	return (int16_t)((int16_t)i8sign * (u16complement + 1));
+	//u16workint = (uint16_t)CONCAT_BYTES(pu8read_data[6], pu8read_data[7]);
+	u16workint = (uint16_t)CONCAT_BYTES(pu8read_data[7], pu8read_data[6]);  //use this if BLE bit is cleared
+	//stprocessed_data->temperature = conv_2compl_to_signed_dec(u16workint,16);
+	i32workint = conv_2compl_to_signed_dec(u16workint,16);
+	i32workint = (1000 * i32workint) / u16gain;
+	stprocessed_data->temperature = (int16_t)i32workint;
 }
