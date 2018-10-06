@@ -20,7 +20,9 @@
 #include "bme280/bme280.h"
 #include "sst25/sst25_flash_handler.h"
 #include "sst25/sst25_flash_map.h"
+#if USE_LIS3MDL
 #include "lis3mdl/lis3mdl.h"
+#endif
 #include "auxiliary/auxiliary_functions.h"
 
 #define INIT_STATUS_LED		(STATUS_LED_DDR |= (1 << STATUS_LED_PIN))
@@ -57,6 +59,7 @@ void print_bme280_raw_data(struct bme280_uncomp_data *comp_data)
 	uart_send_string("RAW Humidity: ");	uart_send_udec(comp_data->humidity);uart_newline();
 }
 
+#if USE_LIS3MDL
 void print_lis3mdl_data(lis3mdl_data_st *stprint_data)
 {
 	uart_send_dec(stprint_data->x_mag);uart_send_string("   ");
@@ -64,6 +67,7 @@ void print_lis3mdl_data(lis3mdl_data_st *stprint_data)
 	uart_send_dec(stprint_data->z_mag);uart_send_string("   ");
 	uart_send_dec(stprint_data->temperature); uart_newline();
 }
+#endif
 
 void save_measurements(void)
 {
@@ -84,9 +88,13 @@ int main(void)
 	#if PRINT_BME280_PROCESSED_OUTPUT
 	struct bme280_data comp_data;
 	#endif
-	uint8_t u8lis3mdl_data[8] = {0,0,0,0,0,0,0,0};
 	uint8_t i = 0;
+	
+	#if USE_LIS3MDL
 	lis3mdl_data_st lis3mdl_print_data;
+	uint8_t u8lis3mdl_data[8] = {0,0,0,0,0,0,0,0};
+	#endif
+	
 	INIT_STATUS_LED;
 	
 	cli();  //Disable interrupts
@@ -179,10 +187,11 @@ int main(void)
 	uart_send_string("BME280 sensor setup with state: ");uart_send_dec(rslt);uart_newline();
 	#endif  //MAIN_LOG_ACTIV
 	
-	//uart_send_dec(get_id());
+	#if USE_LIS3MDL
 	lis3mdl_init();
-	timer_delay_ms(10);
+	#endif
 	
+	timer_delay_ms(10);
 	#if POWER_SAVE_ACTIV
 	set_sleep_mode(SLEEP_MODE_PWR_SAVE);
 	#endif //POWER_SAVE_ACTIV
@@ -210,7 +219,6 @@ int main(void)
 			#endif  //MAIN_LOG_ACTIV
 		#endif //POWER_SAVE_ACTIV
 		
-		#if 1
 		lis3mdl_single_meas();
 		i = lis3mdl_read_meas(u8lis3mdl_data);
 		lis3mdl_idle();
@@ -236,7 +244,9 @@ int main(void)
 			uart_newline();
 			#endif //MAIN_LOG_ACTIV
 			
+			#if USE_LIS3MDL
 			lis3mdl_single_meas();
+			#endif
 						
 			rslt = bme280_set_sensor_mode(BME280_FORCED_MODE, &bme280_interf);  //trigger forced measurement
 			bme280_interf.delay_ms(40);  //delay needed for measurement to complete
@@ -251,11 +261,13 @@ int main(void)
 			print_bme280_raw_data(&uncomp_data);
 			#endif  //MAIN_LOG_ACTIV
 			
+			#if USE_LIS3MDL
 			i = lis3mdl_read_meas(u8lis3mdl_data);
 			#if MAIN_LOG_ACTIV
 			uart_send_string("lis3mdl read state: "); uart_send_char(0x30 + i); uart_newline();
 			#endif  //MAIN_LOG_ACTIV
 			lis3mdl_idle();
+			#endif //USE_LIS3MDL
 			
 			g_u8data_frame[0] = DATA_FRAME_SEPARATOR;
 			g_u8data_frame[1] = timestamp.year;
@@ -279,6 +291,7 @@ int main(void)
 			for (i=19; i<36; i++) {
 				g_u8data_frame[i] = 0xFF;
 			}
+			#if USE_LIS3MDL
 			g_u8data_frame[36] = DATA_FRAME_SEPARATOR;
 			g_u8data_frame[37] = u8lis3mdl_data[0];
 			g_u8data_frame[38] = u8lis3mdl_data[1];
@@ -291,6 +304,7 @@ int main(void)
 			g_u8data_frame[44] = u8lis3mdl_data[6];
 			g_u8data_frame[45] = u8lis3mdl_data[7];
 			g_u8data_frame[46] = DATA_FRAME_SEPARATOR;
+			#endif
 			for (i=47; i<DATA_FRAME_SIZE; i++) {
 				g_u8data_frame[i] = 0xFF;
 			}
@@ -313,12 +327,12 @@ int main(void)
 		print_bme280_data(&comp_data);
 		uart_send_string("BME280 sensor read with state: ");uart_send_dec(rslt);uart_newline();
 		#endif //PRINT_BME280_OUTPUT
-	
-		#if PRINT_LIS3MDL_PROCESSED_OUTPUT
+		
+		#if (PRINT_LIS3MDL_PROCESSED_OUTPUT && USE_LIS3MDL)
 		lis3mdl_process_meas(u8lis3mdl_data, &lis3mdl_print_data);
 		print_lis3mdl_data(&lis3mdl_print_data);
 		timer_delay_ms(10);
-		#endif //PRINT_LIS3MDL_PROCESSED_OUTPUT
+		#endif //(PRINT_LIS3MDL_PROCESSED_OUTPUT && USE_LIS3MDL)
     }
 }
 
