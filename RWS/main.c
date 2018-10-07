@@ -218,6 +218,11 @@ int main(void)
 				uart_send_char('W');
 			#endif  //MAIN_LOG_ACTIV
 		#endif //POWER_SAVE_ACTIV
+
+		lis3mdl_single_meas();
+		i = lis3mdl_read_meas(u8lis3mdl_data);
+		lis3mdl_idle();
+		timer_delay_ms(10);
 		
 		#if (USE_LIS3MDL && PRINT_LIS3MDL_PROCESSED_OUTPUT)
 		lis3mdl_single_meas();

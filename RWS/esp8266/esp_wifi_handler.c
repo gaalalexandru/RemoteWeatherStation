@@ -11,13 +11,13 @@
 #include <string.h>
 #include <stdbool.h>
 #include "esp_wifi_handler.h"
-#include "configuration.h"
-#include "uart_handler.h"
-#include "timer_handler.h"
-#include "status_led.h"
-#include "animation_handler.h"
-#include "pwm_handler.h"
-#include "eeprom_handler.h"
+#include "../configuration.h"
+#include "../uart_handler.h"
+#include "../timer_handler.h"
+//#include "status_led.h"
+//#include "animation_handler.h"
+//#include "pwm_handler.h"
+//#include "eeprom_handler.h"
 
 // Pins have to be digital output
 // CH_PD: Chip enable. Keep it on high (3.3V) for normal operation

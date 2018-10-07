@@ -142,12 +142,6 @@
     <Compile Include="configuration.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="esp8266\esp_wifi_handler.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="esp8266\esp_wifi_handler.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="lis3mdl\lis3mdl.c">
       <SubType>compile</SubType>
     </Compile>
@@ -192,7 +186,6 @@
     <Folder Include="bme280" />
     <Folder Include="lis3mdl" />
     <Folder Include="auxiliary" />
-    <Folder Include="esp8266" />
     <Folder Include="sst25" />
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />

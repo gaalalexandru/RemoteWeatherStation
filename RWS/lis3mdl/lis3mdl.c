@@ -78,19 +78,27 @@ uint8_t lis3mdl_init(void) {
 uint8_t lis3mdl_read_meas(uint8_t *pu8read_data) {
 	uint8_t u8data = 0;
 	uint8_t u8retry_count = 9;
-	do {
-		spi_transfer_sensors(LIS3MDL_SPI_DEV_ID,(READ_OP|ADDR_CONST|STATUS_REG), &u8data, 1);	
-	} while (((u8data & (1<<ZYXDA)) == 0) && (u8retry_count--));
-	spi_transfer_sensors(LIS3MDL_SPI_DEV_ID,(READ_OP|ADDR_INCR|OUT_X_L), pu8read_data, 8);
-	/*spi_transfer_sensors(LIS3MDL_SPI_DEV_ID,(READ_OP|ADDR_INCR|OUT_Z_H), pu8read_data, 3);
+							#if 0
+							do {
+								spi_transfer_sensors(LIS3MDL_SPI_DEV_ID,(READ_OP|ADDR_CONST|STATUS_REG), &u8data, 1);
+							} while (((u8data & (1<<ZYXDA)) == 0) && (u8retry_count--));
+							spi_transfer_sensors(LIS3MDL_SPI_DEV_ID,(READ_OP|ADDR_INCR|OUT_X_L), pu8read_data, 8);
+							#endif
+	//spi_transfer_sensors(LIS3MDL_SPI_DEV_ID,(READ_OP|ADDR_INCR|OUT_Z_H), pu8read_data, 3);
+	CLEAR_CS_PIN(CS_LIS3MDL_PORT,CS_LIS3MDL_PIN);
+	spi_transfer_generic((READ_OP|ADDR_CONST|TEMP_OUT_L));
+	pu8read_data[0] = spi_transfer_generic(0xFF);
+	spi_transfer_generic((READ_OP|ADDR_CONST|TEMP_OUT_H));
+	pu8read_data[1] = spi_transfer_generic(0xFF);	
+	SET_CS_PIN(CS_LIS3MDL_PORT,CS_LIS3MDL_PIN);
+	uart_newline();
+	uart_send_dec(pu8read_data[0]);
 	uart_newline();
 	uart_send_dec(pu8read_data[1]);
 	uart_newline();
-	uart_send_dec(pu8read_data[2]);
-	uart_newline();
 	
 	get_id(LIS3MDL_MANUF_ID);
-	*/
+	
 	return u8retry_count;
 }
 

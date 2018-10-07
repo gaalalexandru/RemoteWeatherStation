@@ -79,7 +79,7 @@
 //////////////////////////////////////////////////////////////////////////
 //						 MEASUREMENTS CONFIGURATION						//
 //////////////////////////////////////////////////////////////////////////
-#define USE_LIS3MDL (0)
+#define USE_LIS3MDL (1)
 #define USE_BME		(1)
 #define WEATHER_MONITORING_INTERVAL_MS (60000)
 #define WEATHER_MONITORING_ACCELERATION (10)
