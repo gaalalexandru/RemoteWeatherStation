@@ -35,9 +35,9 @@
 #define CLEAR_PORT(x,y)	(x) &= ~(1<<(y))
 
 #define MAIN_LOG_ACTIV (0)
-#define DATAFRAME_LOG_ACTIV (1)
+#define DATAFRAME_LOG_ACTIV (0)
 #define PRINT_BME280_PROCESSED_OUTPUT (0)
-#define PRINT_LIS3MDL_PROCESSED_OUTPUT (0)
+#define PRINT_LIS3MDL_PROCESSED_OUTPUT (1)
 
 struct bme280_dev bme280_interf;
 
@@ -226,6 +226,7 @@ int main(void)
 		
 		#if (USE_LIS3MDL && PRINT_LIS3MDL_PROCESSED_OUTPUT)
 		lis3mdl_single_meas();
+		timer_delay_ms(5);
 		i = lis3mdl_read_meas(u8lis3mdl_data);
 		lis3mdl_idle();
 		lis3mdl_process_meas(u8lis3mdl_data, &lis3mdl_print_data);
@@ -334,11 +335,11 @@ int main(void)
 		uart_send_string("BME280 sensor read with state: ");uart_send_dec(rslt);uart_newline();
 		#endif //PRINT_BME280_OUTPUT
 		
-		#if (PRINT_LIS3MDL_PROCESSED_OUTPUT && USE_LIS3MDL)
-		lis3mdl_process_meas(u8lis3mdl_data, &lis3mdl_print_data);
-		print_lis3mdl_data(&lis3mdl_print_data);
-		timer_delay_ms(10);
-		#endif //(PRINT_LIS3MDL_PROCESSED_OUTPUT && USE_LIS3MDL)
+		//#if (PRINT_LIS3MDL_PROCESSED_OUTPUT && USE_LIS3MDL)
+		//lis3mdl_process_meas(u8lis3mdl_data, &lis3mdl_print_data);
+		//print_lis3mdl_data(&lis3mdl_print_data);
+		//timer_delay_ms(10);
+		//#endif //(PRINT_LIS3MDL_PROCESSED_OUTPUT && USE_LIS3MDL)
     }
 }
 

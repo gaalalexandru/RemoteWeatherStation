@@ -22,7 +22,8 @@
 #endif //SST25_LOG_ACTIV
 
 #define LIS3MDL_SPI_DEV_ID	(1)
-#define LIS3MDL_FULL_SCALE	(4)
+#define LIS3MDL_FULL_SCALE	(8)
+#define LIS3MDL_BYTE_ORDER_MSB (1)
 
 static uint8_t get_id(const uint8_t u8expected_id) {
 	uint8_t u8id = 0;
@@ -46,22 +47,25 @@ static uint8_t get_id(const uint8_t u8expected_id) {
 uint8_t lis3mdl_init(void) {
 	uint8_t u8data = 0;
 
-	/*#if (LIS3MDL_FULL_SCALE == 4)
-	u8data = (1 << TEMP_EN) | (1 << DO2) | (1 << DO1) | (1 << DO0);  //temp meas enabled, OM = low power mode, DO = output data rate 80 Hz
-	#elif (LIS3MDL_FULL_SCALE == 8)
-	u8data = (1 << TEMP_EN);  //temp meas enabled, OM = low power mode, DO = output data rate 0.625 Hz
-	#endif
-	*/
-	u8data = (1 << TEMP_EN) | (1<<DO0) | (1<<OM1);  //temp meas enabled, OM = low power mode, DO = output data rate 0.625 Hz
+
+	//temp meas enabled, OM = High performance mode, DO = output data rate 80 Hz
+	u8data = (1 << TEMP_EN) | (1 << DO2) | (1 << DO1) | (1 << DO0) | (1 << OM1);
 	spi_transfer_sensors(LIS3MDL_SPI_DEV_ID,(WRITE_OP|ADDR_CONST|CTRL_REG1), &u8data, 1);
 
-	//u8data = (1 << BLE);  //OM = low power Z axis, MSB of data on lower register address
-	//u8data = 0; //OM = low power Z axis, LSB of data on lower register address
-	u8data = (1<<OMZ1); //Z axis High performance , LSB of data on lower register address
+	#if LIS3MDL_BYTE_ORDER_MSB
+	u8data = (1 << OMZ1) | (1 << BLE); //Z axis High performance , MSB of data on lower register address
+	#else 
+	u8data = (1 << OMZ1); //Z axis High performance , LSB of data on lower register address
+	#endif  //LIS3MDL_BYTE_ORDER_MSB
 	spi_transfer_sensors(LIS3MDL_SPI_DEV_ID,(WRITE_OP|ADDR_CONST|CTRL_REG4), &u8data, 1);
 	
 	//u8data = (1 << FS0);  //full scale selection ±8 gauss
-	u8data = 0;  //full scale selection ±4 gauss
+	
+	#if (LIS3MDL_FULL_SCALE == 4)
+	u8data = 0;  //full scale selection ±4 gauss	
+	#elif (LIS3MDL_FULL_SCALE == 8)
+	u8data = (1 << FS0);  //full scale selection ±8 gauss
+	#endif
 	spi_transfer_sensors(LIS3MDL_SPI_DEV_ID,(WRITE_OP|ADDR_CONST|CTRL_REG2), &u8data, 1);
 	
 	u8data = 0;//(1<<BDU);  //not fast read, block data update until is read out
@@ -78,12 +82,13 @@ uint8_t lis3mdl_init(void) {
 uint8_t lis3mdl_read_meas(uint8_t *pu8read_data) {
 	uint8_t u8data = 0;
 	uint8_t u8retry_count = 9;
-							#if 0
+							#if 1
 							do {
 								spi_transfer_sensors(LIS3MDL_SPI_DEV_ID,(READ_OP|ADDR_CONST|STATUS_REG), &u8data, 1);
 							} while (((u8data & (1<<ZYXDA)) == 0) && (u8retry_count--));
 							spi_transfer_sensors(LIS3MDL_SPI_DEV_ID,(READ_OP|ADDR_INCR|OUT_X_L), pu8read_data, 8);
 							#endif
+	#if 0
 	//spi_transfer_sensors(LIS3MDL_SPI_DEV_ID,(READ_OP|ADDR_INCR|OUT_Z_H), pu8read_data, 3);
 	CLEAR_CS_PIN(CS_LIS3MDL_PORT,CS_LIS3MDL_PIN);
 	spi_transfer_generic((READ_OP|ADDR_CONST|TEMP_OUT_L));
@@ -96,19 +101,18 @@ uint8_t lis3mdl_read_meas(uint8_t *pu8read_data) {
 	uart_newline();
 	uart_send_dec(pu8read_data[1]);
 	uart_newline();
-	
 	get_id(LIS3MDL_MANUF_ID);
-	
+	#endif
 	return u8retry_count;
 }
 
 void lis3mdl_single_meas(void) {
-	uint8_t u8data = (1 << LP) | (1 << MD0);
+	uint8_t u8data =/* (1 << LP) | */(1 << MD0);
 	spi_transfer_sensors(LIS3MDL_SPI_DEV_ID,(WRITE_OP|ADDR_CONST|CTRL_REG3), &u8data, 1);
 }
 
 void lis3mdl_idle(void) {
-	uint8_t u8data = (1 << LP) | (1 << MD1) | (1 << MD0);
+	uint8_t u8data = /*(1 << LP) |*/ (1 << MD1) | (1 << MD0);
 	spi_transfer_sensors(LIS3MDL_SPI_DEV_ID,(WRITE_OP|ADDR_CONST|CTRL_REG3), &u8data, 1);
 }
 
