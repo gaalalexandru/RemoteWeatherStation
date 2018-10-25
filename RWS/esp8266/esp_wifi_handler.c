@@ -89,8 +89,7 @@ volatile uint8_t esp_ap_current_state = 0;
 //char esp_wifi_pass[ESP_PASS_MAX_LENGTH];
 
 volatile uint32_t response_max_timestamp;
-extern volatile uint8_t pwm_width_buffer[PWM_CHMAX];
-extern volatile status_led_mode_t status_led_mode;
+//extern volatile status_led_mode_t status_led_mode;
 
 /************************************************************************/
 /*                      Wifi UART interface functions                   */
@@ -404,7 +403,7 @@ void esp_wifi_setup(void)
 				//if(send_command("AT+CIPSERVER=1,1002", "OK"))
 				#if 1
 				uart_send_string("AT+CIPSERVER=1,");
-				uart_send_string(ESP_AP_PORT);
+				uart_send_string(ESP_ACCPNT_PORT);
 				uart_newline();
 				timer_delay_ms(100);
 				send_command("AT+CIPSTO=60", "OK");	
@@ -502,7 +501,7 @@ void esp_wifi_setup(void)
 			break;
 		}
 	}
-	
+	#if 0
 	if (esp_ap_current_state == ESP_AP_CONFIG_SUCCESS)
 	{
 		if(eeprom_read_byte(EEL_AP_ALWAYS_ON) == AP_NOT_ALWAYS_ON)
@@ -511,6 +510,7 @@ void esp_wifi_setup(void)
 		}
 		esp_sta_current_state = ESP_STA_START_TCP_SERVER;
 	}
+	#endif
 }
 
 void esp_state_machine(void)
@@ -535,7 +535,7 @@ void esp_state_machine(void)
 				if(send_command("AT", "OK"))
 				{
 					esp_sta_current_state = ESP_STA_CONNECT/*ESP_STA_SETMODE*/;
-					status_led_mode = wait_for_ip;
+					//status_led_mode = wait_for_ip;
 				}
 				uart_flush();	
 			break;
@@ -696,7 +696,7 @@ void esp_state_machine(void)
 	//DD = HEX value of PWM duty cycle for selected channel
 	if(esp_sta_current_state == ESP_STA_WAIT_COMMANDS) 
 	{
-		status_led_mode = connected_to_ap;
+		//status_led_mode = connected_to_ap;
 		if(check_until_timeout("+IPD,", 1))
 		{
 			currStrPos = strstr(serialResult, "+IPD,");		
@@ -704,30 +704,11 @@ void esp_state_machine(void)
 			currStrPos = strchr(currStrPos, ':');  //find end of client IP, Port nr
 			dataPtr = currStrPos + 1;
 			
-			if(*dataPtr == '$')  //if we receive a command for PWM setting - command begins with $
+			if(*dataPtr == '$')  //if we receive a command
 			{
-				dataPtr++;
-				u8work_int = (*dataPtr) - 0x30;
-				dataPtr++;
-				//check if next character is start of duty cycle byte (#) or still channel nr.
-				if(*dataPtr != '#')
-				{
-					u8work_int = (u8work_int*10)+((*dataPtr) - 0x30);
-				}
-				currStrPos = strchr(currStrPos, '#');  //find start of duty cycle byte
-				dataPtr = currStrPos + 1;  //go to duty cycle byte
-				if(pwm_wifi_update(u8work_int,  ((uint8_t)*dataPtr)))
-				{
-					//pwm duty cycle update was successeful (values OK)
-					esp_response(senderID, clientIPString, "OK");
-				}
-				else
-				{
-					esp_response(senderID, clientIPString, "Error");
-				}
-				u8work_int = 0;
+				esp_response(senderID, clientIPString, "Error");
 			}
-			else if(*dataPtr == '#') //if we receive a command other than PWM setting - command begins with #
+			else if(*dataPtr == '#') //if we receive a command
 			{
 				dataPtr++;
 				switch (*dataPtr)
@@ -754,79 +735,26 @@ void esp_state_machine(void)
 						}
 						else{ /*do nothing*/ }				
 					break;
-					
-					case 'G':  //G command: set default PWM (will be stored in EEPROM)
-						dataPtr++;
-						if(pwm_save_default_dutycycle((uint8_t)*dataPtr))
-						{
-							esp_response(senderID, clientIPString, strcat(dataPtr,"->OK"));
-						}
-						else
-						{
-							esp_response(senderID, clientIPString, strcat(dataPtr,"->Error"));
-						}			
+					#ifdef ESP_CUSTOM_COMMANDS					
+					case 'G':  //G command
+						esp_response(senderID, clientIPString, "response");		
 					break;
-					
-					case 'H':  //H command: set startup animation
-						dataPtr++;
-						if(animation_save_startup_anim((uint8_t)*dataPtr))
-						{
-							esp_response(senderID, clientIPString, strcat(dataPtr,"->OK"));
-						}
-						else
-						{
-							esp_response(senderID, clientIPString, strcat(dataPtr,"->Error"));
-						}
+					case 'H':  //H command
+						esp_response(senderID, clientIPString, "response");
 					break;
-					
-					case 'I':  //I command: set no network animation
-						dataPtr++;
-						if(animation_save_no_netw_anim((uint8_t)*dataPtr))
-						{
-							esp_response(senderID, clientIPString, strcat(dataPtr,"->OK"));
-						}
-						else
-						{
-							esp_response(senderID, clientIPString, strcat(dataPtr,"->Error"));
-						}
+					case 'I':  //I command
+						esp_response(senderID, clientIPString, "response");
 					break;
-
-					case 'J':  //J command: set no network notification power
-						dataPtr++;
-						if(animation_save_no_netw_power((uint8_t)*dataPtr))
-						{
-							esp_response(senderID, clientIPString, strcat(dataPtr,"->OK"));
-						}
-						else
-						{
-							esp_response(senderID, clientIPString, strcat(dataPtr,"->Error"));
-						}
+					case 'J':  //J command
+						esp_response(senderID, clientIPString, "response");
 					break;
-
-					case 'K': //K command:get the device ID from eeprom
-						u8work_int = eeprom_load_id();
-						if(u8work_int != EEPROM_INVALID_ID)
-						{
-							esp_response(senderID, clientIPString, (char*)&u8work_int /*strcat("LL",&u8dev_id)*/);
-						}
-						else
-						{
-							esp_response(senderID, clientIPString, "No valid ID");
-						}
+					case 'K': //K command
+						esp_response(senderID, clientIPString, "response");
 					break;
-
-					case 'L': //L command:save the device ID to eeprom
-						dataPtr++;
-						if(eeprom_save_id((uint8_t)*dataPtr))
-						{
-							esp_response(senderID, clientIPString, strcat(dataPtr,"->OK"));
-						}
-						else
-						{
-							esp_response(senderID, clientIPString, strcat(dataPtr,"->Error"));
-						}
+					case 'L': //L command
+						esp_response(senderID, clientIPString, "response");
 					break;
-
+					#endif //ESP_CUSTOM_COMMANDS	
 					default:
 						//do nothing
 					break;

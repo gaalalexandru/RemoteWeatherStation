@@ -79,8 +79,8 @@
 //////////////////////////////////////////////////////////////////////////
 //						 MEASUREMENTS CONFIGURATION						//
 //////////////////////////////////////////////////////////////////////////
-#define USE_LIS3MDL (1)
-#define USE_BME		(1)
+#define USE_LIS3MDL (0)
+#define USE_BME280		(1)
 #define WEATHER_MONITORING_INTERVAL_MS (60000)
 #define WEATHER_MONITORING_ACCELERATION (10)
 
@@ -88,4 +88,27 @@
 #define DATA_FRAME_SEPARATOR (0x55)
 
 #define POWER_SAVE_ACTIV (1)
+
+//////////////////////////////////////////////////////////////////////////
+//						 ESP & WIFI CONFIGURATION						//
+//////////////////////////////////////////////////////////////////////////
+#define ESP_RST_PORT	PORTD
+#define ESP_RST_DDR		DDRD
+#define ESP_RST_PIN		PIN7
+#define ESP_ENABLE_PORT	PORTD
+#define ESP_ENABLE_DDR	DDRD
+#define ESP_ENABLE_PIN	PIN6
+
+#define ESP_ACCPNT_PORT		"1002"  //port of ESP Access Point TCP Server
+#define ESP_SERVER_PORT		"1001"  //port of Master TCP Server
+
+//#define WIFI_SSID_PASSWORD	"\"UPC5C34B5E\",\"jsUsje5vd4ue\"\r\n"		/*232255504335433334423545222C226A7355736A65357664347565220D0A*/
+//#define WIFI_SSID_PASSWORD	"\"AndroidAP\",\"stargate\"\r\n"			/*2322416E64726F69644150222C227374617267617465220D0A*/
+//#define WIFI_SSID_PASSWORD	"\"ASUS_X008D\",\"86c423b622c8\"\r\n"		/*2322415355535F5830303844222C22383663343233623632326338220D0A*/
+#define WIFI_SSID_PASSWORD	"\"MyASUS\",\"Zuzuk1man\"\r\n"				/*23224D7941535553222C225A757A756B316D616E220D0A*/
+//#define WIFI_SSID_PASSWORD	"\"FELINVEST\",\"1234qwe$\"\r\n"			/*232246454C494E56455354222C223132333471776524220D0A*/
+//#define WIFI_SSID_PASSWORD	"\"BogdanMobile\",\"bogdan123\"\r\n" 		/*2322426F6764616E4D6F62696C65222C22626F6764616E313233220D0A*/
+//#define WIFI_SSID_PASSWORD		"Blank"
+#define WIFI_CHECKCONNECTION_FUNCTION	(10)	//interval in seconds between connection checks; 0 = off
+#define WIFI_CHECKCONNECTION_ATTEMPTS (3)	//retry connection attempts
 #endif /* CONFIGURATION_H_ */

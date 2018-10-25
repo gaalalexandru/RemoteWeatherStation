@@ -1,0 +1,74 @@
+#ifdef MAIN_TEST_2COMPLEMENT_CONVERSION	
+	uart_send_string("testing conversion from 2s complement:"); uart_newline();
+	uart_send_udec(60643); uart_send_char('='); uart_send_dec(conv_2compl_to_signed_dec(60643,16)); uart_newline();  //expected: -4893
+	uart_send_udec(27875); uart_send_char('='); uart_send_dec(conv_2compl_to_signed_dec(27875,16)); uart_newline();  //expected: 27875
+	uart_send_udec(40163); uart_send_char('='); uart_send_dec(conv_2compl_to_signed_dec(40163,16)); uart_newline();  //expected: -25373
+	uart_send_udec(7406); uart_send_char('='); uart_send_dec(conv_2compl_to_signed_dec(7406,16)); uart_newline();  //expected: 7406
+	uart_send_udec(62190); uart_send_char('='); uart_send_dec(conv_2compl_to_signed_dec(62190,16)); uart_newline();  //expected: -3346
+	timer_delay_ms(100);
+#endif //MAIN_TEST_2COMPLEMENT_CONVERSION
+
+
+
+	uart_send_string("testing memory write:"); uart_newline();	
+	sst25_begin_write(HOUR_0_ADDR | MINUTE_2_REL_START_ADDR);
+	sst25_write(0x38);
+	sst25_write(0x39);
+	sst25_write(0x40);
+	sst25_write(0x41);
+	uart_send_string("write done"); uart_newline();	
+
+	sst25_erase_chip();
+	
+	uart_send_string("testing memory read 1:");
+	uart_newline();
+	sst25_read_array(HOUR_0_ADDR | MINUTE_2_REL_START_ADDR,pu8dreturnata,4);
+	uart_send_string("read data 1: ");
+	uart_send_string(pu8dreturnata);
+	uart_newline();
+
+	uart_send_string("testing memory read 2:");
+	uart_newline();
+	sst25_read_array(HOUR_1_ADDR | MINUTE_0_REL_START_ADDR,pu8dreturnata,4);
+	uart_send_string("read data 2: ");
+	uart_send_string(pu8dreturnata);
+	uart_newline();
+
+	
+	uart_send_string("testing memory read:");
+	uart_newline();
+	sst25_read_array(0x00000000,pu8dreturnata,4);
+	uart_send_string("read data: ");
+	uart_send_string(pu8dreturnata);
+	uart_newline();
+
+	uart_send_string("testing memory read:");
+	uart_newline();
+	sst25_read_array(HOUR_0_ADDR | MINUTE_1_REL_START_ADDR,pu8dreturnata,4);
+	uart_send_string("read data: ");
+	uart_send_string(pu8dreturnata);
+	uart_newline();
+	
+#if MAIN_LOG_ACTIV
+	uart_send_string("BME280 sensor initialized with state: "); uart_send_dec(rslt); uart_newline();
+	uart_send_string("BME280 sensor calibration data: "); uart_newline();
+	uart_send_string("dig_T1 = "); uart_send_dec(bme280_interf.calib_data.dig_T1); uart_newline();
+	uart_send_string("dig_T2 = "); uart_send_dec(bme280_interf.calib_data.dig_T2); uart_newline();
+	uart_send_string("dig_T3 = "); uart_send_dec(bme280_interf.calib_data.dig_T3); uart_newline();
+	uart_send_string("dig_P1 = "); uart_send_dec(bme280_interf.calib_data.dig_P1); uart_newline();
+	uart_send_string("dig_P2 = "); uart_send_dec(bme280_interf.calib_data.dig_P2); uart_newline();
+	uart_send_string("dig_P3 = "); uart_send_dec(bme280_interf.calib_data.dig_P3); uart_newline();
+	uart_send_string("dig_P4 = "); uart_send_dec(bme280_interf.calib_data.dig_P4); uart_newline();
+	uart_send_string("dig_P5 = "); uart_send_dec(bme280_interf.calib_data.dig_P5); uart_newline();
+	uart_send_string("dig_P6 = "); uart_send_dec(bme280_interf.calib_data.dig_P6); uart_newline();
+	uart_send_string("dig_P7 = "); uart_send_dec(bme280_interf.calib_data.dig_P7); uart_newline();
+	uart_send_string("dig_P8 = "); uart_send_dec(bme280_interf.calib_data.dig_P8); uart_newline();
+	uart_send_string("dig_P9 = "); uart_send_dec(bme280_interf.calib_data.dig_P9); uart_newline();
+	uart_send_string("dig_H1 = "); uart_send_dec(bme280_interf.calib_data.dig_H1); uart_newline();
+	uart_send_string("dig_H2 = "); uart_send_dec(bme280_interf.calib_data.dig_H2); uart_newline();
+	uart_send_string("dig_H3 = "); uart_send_dec(bme280_interf.calib_data.dig_H3); uart_newline();
+	uart_send_string("dig_H4 = "); uart_send_dec(bme280_interf.calib_data.dig_H4); uart_newline();
+	uart_send_string("dig_H5 = "); uart_send_dec(bme280_interf.calib_data.dig_H5); uart_newline();
+	uart_send_string("dig_H6 = "); uart_send_dec(bme280_interf.calib_data.dig_H6); uart_newline();
+	uart_send_string("t_fine = "); uart_send_dec(bme280_interf.calib_data.t_fine); uart_newline();												
+#endif  //MAIN_LOG_ACTIV

@@ -24,6 +24,7 @@
 #include "lis3mdl/lis3mdl.h"
 #endif
 #include "auxiliary/auxiliary_functions.h"
+#include "esp8266/esp_wifi_handler.h"
 
 #define INIT_STATUS_LED		(STATUS_LED_DDR |= (1 << STATUS_LED_PIN))
 #define TOGGLE_STATUS_LED	(STATUS_LED_PORT ^= (1 << STATUS_LED_PIN))
@@ -38,6 +39,18 @@
 #define DATAFRAME_LOG_ACTIV (0)
 #define PRINT_BME280_PROCESSED_OUTPUT (0)
 #define PRINT_LIS3MDL_PROCESSED_OUTPUT (1)
+
+#if MAIN_LOG_ACTIV
+#define LOG_DEC(x,y) uart_send_string(x); uart_send_dec(y); uart_newline();
+#define LOG_HEX(x,y) uart_send_string(x); uart_send_uhex(y); uart_newline();
+#define LOG_STR(x,y) uart_send_string(x); uart_send_string(y); uart_newline();
+#define LOG_CHR(x,y) uart_send_string(x); uart_send_char(y); uart_newline();
+#else
+#define LOG_DEC(x,y)
+#define LOG_HEX(x,y)
+#define LOG_STR(x,y)
+#define LOG_CHR(x,y)
+#endif  //MAIN_LOG_ACTIV
 
 struct bme280_dev bme280_interf;
 
@@ -74,9 +87,7 @@ void save_measurements(void)
 	uint32_t u32address = 0;
 	u32address = (HOUR_0_ADDR + (timestamp.hour*SST25_SECTOR_SIZE) + (timestamp.minute * DATA_FRAME_SIZE));
 	//erase the chip completely only when data is sent out...
-	#if MAIN_LOG_ACTIV
-	uart_send_string("Write dataframe to: 0x"); uart_send_uhex(u32address); uart_newline();
-	#endif //MAIN_LOG_ACTIV
+	LOG_HEX("Write dataframe to: 0x", u32address)
 	sst25_begin_write(u32address);
 	sst25_write_array(g_u8data_frame,DATA_FRAME_SIZE);
 }
@@ -84,10 +95,15 @@ void save_measurements(void)
 int main(void)
 {
 	int8_t rslt = BME280_OK;
-	struct bme280_uncomp_data uncomp_data;	
+	
+	#if USE_BME280
+	struct bme280_uncomp_data uncomp_data;
+	#endif
+	
 	#if PRINT_BME280_PROCESSED_OUTPUT
 	struct bme280_data comp_data;
 	#endif
+	
 	uint8_t i = 0;
 	
 	#if USE_LIS3MDL
@@ -103,53 +119,13 @@ int main(void)
 	timer2_init(); //global timer init
 	spi_init();
 	sei();  // enable global interrupts
-
-	uart_send_string("Timer, UART & SPI Drivers initialized");	uart_newline();
-	uart_send_string("Compiled on: ");uart_send_string(__DATE__);	uart_newline();
-	uart_send_string("Compiled at: ");uart_send_string(__TIME__);	uart_newline();
+	LOG_STR("Compiled on: ",__DATE__);
+	LOG_STR("Compiled at: ",__TIME__);
+	LOG_STR("Drivers initialized: ","Timer, UART & SPI");
 	sst25_flash_init();
-
-	/*uart_send_string("testing memory write:"); uart_newline();	
-	sst25_begin_write(HOUR_0_ADDR | MINUTE_2_REL_START_ADDR);
-	sst25_write(0x38);
-	sst25_write(0x39);
-	sst25_write(0x40);
-	sst25_write(0x41);
-	uart_send_string("write done"); uart_newline();	*/
-
-	//sst25_erase_chip();
+	LOG_STR("Hardware initialized: ","SST25 Flash Memory");
 	
-	/*uart_send_string("testing memory read 1:");
-	uart_newline();
-	sst25_read_array(HOUR_0_ADDR | MINUTE_2_REL_START_ADDR,pu8dreturnata,4);
-	uart_send_string("read data 1: ");
-	uart_send_string(pu8dreturnata);
-	uart_newline();*/
-
-	/*uart_send_string("testing memory read 2:");
-	uart_newline();
-	sst25_read_array(HOUR_1_ADDR | MINUTE_0_REL_START_ADDR,pu8dreturnata,4);
-	uart_send_string("read data 2: ");
-	uart_send_string(pu8dreturnata);
-	uart_newline();*/
-
-	/*
-	uart_send_string("testing memory read:");
-	uart_newline();
-	sst25_read_array(0x00000000,pu8dreturnata,4);
-	uart_send_string("read data: ");
-	uart_send_string(pu8dreturnata);
-	uart_newline();
-
-	uart_send_string("testing memory read:");
-	uart_newline();
-	sst25_read_array(HOUR_0_ADDR | MINUTE_1_REL_START_ADDR,pu8dreturnata,4);
-	uart_send_string("read data: ");
-	uart_send_string(pu8dreturnata);
-	uart_newline();
-	*/
-	
-	
+	#if USE_BME280
 	/* Sensor_0 interface over SPI with native chip select line */
 	bme280_interf.dev_id = 0;
 	bme280_interf.intf = BME280_SPI_INTF;
@@ -157,90 +133,47 @@ int main(void)
 	bme280_interf.write = spi_transfer_sensors;
 	bme280_interf.delay_ms = timer_delay_ms;
 	rslt = bme280_init(&bme280_interf);
-		
-	#if MAIN_LOG_ACTIV
-	uart_send_string("BME280 sensor initialized with state: "); uart_send_dec(rslt); uart_newline();
-	uart_send_string("BME280 sensor calibration data: "); uart_newline();
-	uart_send_string("dig_T1 = "); uart_send_dec(bme280_interf.calib_data.dig_T1); uart_newline();
-	uart_send_string("dig_T2 = "); uart_send_dec(bme280_interf.calib_data.dig_T2); uart_newline();
-	uart_send_string("dig_T3 = "); uart_send_dec(bme280_interf.calib_data.dig_T3); uart_newline();
-	uart_send_string("dig_P1 = "); uart_send_dec(bme280_interf.calib_data.dig_P1); uart_newline();
-	uart_send_string("dig_P2 = "); uart_send_dec(bme280_interf.calib_data.dig_P2); uart_newline();
-	uart_send_string("dig_P3 = "); uart_send_dec(bme280_interf.calib_data.dig_P3); uart_newline();
-	uart_send_string("dig_P4 = "); uart_send_dec(bme280_interf.calib_data.dig_P4); uart_newline();
-	uart_send_string("dig_P5 = "); uart_send_dec(bme280_interf.calib_data.dig_P5); uart_newline();
-	uart_send_string("dig_P6 = "); uart_send_dec(bme280_interf.calib_data.dig_P6); uart_newline();
-	uart_send_string("dig_P7 = "); uart_send_dec(bme280_interf.calib_data.dig_P7); uart_newline();
-	uart_send_string("dig_P8 = "); uart_send_dec(bme280_interf.calib_data.dig_P8); uart_newline();
-	uart_send_string("dig_P9 = "); uart_send_dec(bme280_interf.calib_data.dig_P9); uart_newline();
-	uart_send_string("dig_H1 = "); uart_send_dec(bme280_interf.calib_data.dig_H1); uart_newline();
-	uart_send_string("dig_H2 = "); uart_send_dec(bme280_interf.calib_data.dig_H2); uart_newline();
-	uart_send_string("dig_H3 = "); uart_send_dec(bme280_interf.calib_data.dig_H3); uart_newline();
-	uart_send_string("dig_H4 = "); uart_send_dec(bme280_interf.calib_data.dig_H4); uart_newline();
-	uart_send_string("dig_H5 = "); uart_send_dec(bme280_interf.calib_data.dig_H5); uart_newline();
-	uart_send_string("dig_H6 = "); uart_send_dec(bme280_interf.calib_data.dig_H6); uart_newline();
-	uart_send_string("t_fine = "); uart_send_dec(bme280_interf.calib_data.t_fine); uart_newline();												
-	#endif  //MAIN_LOG_ACTIV
-	
+	LOG_DEC("BME280 sensor initialized with state: ",rslt);
 	rslt = bme280_setup_weather_monitoring_meas(&bme280_interf);
-	#if MAIN_LOG_ACTIV
-	uart_send_string("BME280 sensor setup with state: ");uart_send_dec(rslt);uart_newline();
-	#endif  //MAIN_LOG_ACTIV
+	LOG_DEC("BME280 sensor setup with state: ",rslt);
+	LOG_STR("Hardware initialized: ","BME280 Sensor");
+	#endif //USE_BME280
 	
 	#if USE_LIS3MDL
-	lis3mdl_init();
-	#endif
+	rslt = lis3mdl_init();
+	LOG_DEC("LIS3MDL sensor initialized with state: ",rslt);
+	LOG_STR("Hardware initialized: ","LIS3MDL Sensor");
+	#endif //USE_LIS3MDL
+	
+	esp_init();
 	
 	timer_delay_ms(10);
 	#if POWER_SAVE_ACTIV
 	set_sleep_mode(SLEEP_MODE_PWR_SAVE);
 	#endif //POWER_SAVE_ACTIV
 
-#ifdef MAIN_TEST_2COMPLEMENT_CONVERSION	
-	uart_send_string("testing conversion from 2s complement:"); uart_newline();
-	uart_send_udec(60643); uart_send_char('='); uart_send_dec(conv_2compl_to_signed_dec(60643,16)); uart_newline();  //expected: -4893
-	uart_send_udec(27875); uart_send_char('='); uart_send_dec(conv_2compl_to_signed_dec(27875,16)); uart_newline();  //expected: 27875
-	uart_send_udec(40163); uart_send_char('='); uart_send_dec(conv_2compl_to_signed_dec(40163,16)); uart_newline();  //expected: -25373
-	uart_send_udec(7406); uart_send_char('='); uart_send_dec(conv_2compl_to_signed_dec(7406,16)); uart_newline();  //expected: 7406
-	uart_send_udec(62190); uart_send_char('='); uart_send_dec(conv_2compl_to_signed_dec(62190,16)); uart_newline();  //expected: -3346
-	timer_delay_ms(100);
-#endif //MAIN_TEST_2COMPLEMENT_CONVERSION
+
 	
     while(1)
     {	
 		#if POWER_SAVE_ACTIV
-			#if MAIN_LOG_ACTIV
-				uart_send_char('S');
-			#endif  //MAIN_LOG_ACTIV
+			LOG_CHR("Sleep",' ');
 			timer_delay_ms(10);
 			sleep_mode();
-			#if MAIN_LOG_ACTIV
-				uart_send_char('W');
-			#endif  //MAIN_LOG_ACTIV
+			LOG_CHR("Wakeup",' ');
 		#endif //POWER_SAVE_ACTIV
-
-		lis3mdl_single_meas();
-		i = lis3mdl_read_meas(u8lis3mdl_data);
-		lis3mdl_idle();
-		timer_delay_ms(10);
 		
-		#if (USE_LIS3MDL && PRINT_LIS3MDL_PROCESSED_OUTPUT)
+		#if USE_LIS3MDL
 		lis3mdl_single_meas();
-		timer_delay_ms(5);
+		timer_delay_ms(5);  //3.7 ms necessay for LIS3MDL startup
 		i = lis3mdl_read_meas(u8lis3mdl_data);
 		lis3mdl_idle();
-		lis3mdl_process_meas(u8lis3mdl_data, &lis3mdl_print_data);
-		print_lis3mdl_data(&lis3mdl_print_data);
-		timer_delay_ms(10);
 		#endif
-		
 		
 		if(g_u8start_measurement) 
 		{
 			g_u8start_measurement = 0;
-			//wait 6 seconds during development, 60 seconds in final product
-			//timer_delay_ms(WEATHER_MONITORING_INTERVAL_MS  / WEATHER_MONITORING_ACCELERATION);
-			
+
 			#if MAIN_LOG_ACTIV
 			uart_send_udec(20); uart_send_udec(timestamp.year); uart_send_string("/");
 			uart_send_udec(timestamp.month); uart_send_string("/");
@@ -256,23 +189,14 @@ int main(void)
 			#endif
 						
 			rslt = bme280_set_sensor_mode(BME280_FORCED_MODE, &bme280_interf);  //trigger forced measurement
+			LOG_DEC("BME280 sensor force mode trigger with state: ",rslt);
 			bme280_interf.delay_ms(40);  //delay needed for measurement to complete
-			#if MAIN_LOG_ACTIV
-			uart_send_string("BME280 sensor force mode trigger with state: ");uart_send_dec(rslt);uart_newline();
-			#endif  //MAIN_LOG_ACTIV
-			
 			rslt = bme280_get_raw_sensor_data(BME280_ALL, &uncomp_data, &bme280_interf);
-			
-			#if MAIN_LOG_ACTIV
-			uart_send_string("BME280 sensor RAW read with state: ");uart_send_dec(rslt);uart_newline();
-			print_bme280_raw_data(&uncomp_data);
-			#endif  //MAIN_LOG_ACTIV
+			LOG_DEC("BME280 sensor RAW read with state: ",rslt);
 			
 			#if USE_LIS3MDL
-			i = lis3mdl_read_meas(u8lis3mdl_data);
-			#if MAIN_LOG_ACTIV
-			uart_send_string("lis3mdl read state: "); uart_send_char(0x30 + i); uart_newline();
-			#endif  //MAIN_LOG_ACTIV
+			rslt = lis3mdl_read_meas(u8lis3mdl_data);
+			LOG_DEC("LIS3MDL read state:  ",rslt);
 			lis3mdl_idle();
 			#endif //USE_LIS3MDL
 			
@@ -329,17 +253,17 @@ int main(void)
 			#endif //DATAFRAME_LOG_ACTIV
 		}
 
-		#if PRINT_BME280_PROCESSED_OUTPUT
+		#if (PRINT_BME280_PROCESSED_OUTPUT && USE_BME280)
 		rslt = bme280_get_sensor_data(BME280_ALL, &comp_data, &bme280_interf);
 		print_bme280_data(&comp_data);
 		uart_send_string("BME280 sensor read with state: ");uart_send_dec(rslt);uart_newline();
 		#endif //PRINT_BME280_OUTPUT
 		
-		//#if (PRINT_LIS3MDL_PROCESSED_OUTPUT && USE_LIS3MDL)
-		//lis3mdl_process_meas(u8lis3mdl_data, &lis3mdl_print_data);
-		//print_lis3mdl_data(&lis3mdl_print_data);
-		//timer_delay_ms(10);
-		//#endif //(PRINT_LIS3MDL_PROCESSED_OUTPUT && USE_LIS3MDL)
+		#if (PRINT_LIS3MDL_PROCESSED_OUTPUT && USE_LIS3MDL)
+		lis3mdl_process_meas(u8lis3mdl_data, &lis3mdl_print_data);
+		print_lis3mdl_data(&lis3mdl_print_data);
+		timer_delay_ms(10);
+		#endif //(PRINT_LIS3MDL_PROCESSED_OUTPUT && USE_LIS3MDL)
     }
 }
 
